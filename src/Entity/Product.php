@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
@@ -15,35 +16,44 @@ class Product
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 500, maxMessage: "La description ne doit pas dépasser {{ limit }} caractères")]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $description = null;
 
-    #[ORM\Column(nullable: true, options: ["unsigned" => true])]
+    #[ORM\Column(nullable: true, options: ["unsigned" => true, "default" => 0])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $price = null;
 
-    #[ORM\Column]
+    #[ORM\Column(options: ["default" => true])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?bool $visible = null;
 
     #[ORM\ManyToMany(targetEntity: Allergen::class, inversedBy: 'products')]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private Collection $allergens;
 
-    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductVersion::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductVersion::class, orphanRemoval: true, cascade: ["persist"])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private Collection $versions;
 
-    #[ORM\OneToMany(mappedBy: 'product', targetEntity: SectionProduct::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: SectionProduct::class, orphanRemoval: true, cascade: ["persist", "detach"])]
+    #[Groups(["getProducts"])]
     private Collection $sectionProducts;
 
     public function __construct()
     {
+        $this->visible = true;
         $this->allergens = new ArrayCollection();
         $this->versions = new ArrayCollection();
         $this->sectionProducts = new ArrayCollection();

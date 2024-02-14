@@ -42,8 +42,9 @@ class SectionService
 
         $higherProducts = $section->getSectionProducts()->filter((fn(SectionProduct $sp) => $sp->getRank() > $rank));
 
-        foreach($higherProducts as $product) {
-            $product->setRank($product->getRank() - 1);
+        /** @var SectionProduct $sp */
+        foreach($higherProducts as $sp) {
+            $sp->setRank($sp->getRank() - 1);
         }
     }
 }

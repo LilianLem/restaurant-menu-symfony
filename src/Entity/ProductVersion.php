@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\ProductVersionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductVersionRepository::class)]
@@ -19,6 +20,7 @@ class ProductVersion
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'versions')]
@@ -29,14 +31,22 @@ class ProductVersion
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $name = null;
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $price = null;
 
-    #[ORM\Column]
+    #[ORM\Column(options: ["default" => true])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?bool $visible = null;
+
+    public function __construct()
+    {
+        $this->visible = true;
+    }
 
     public function getId(): ?int
     {

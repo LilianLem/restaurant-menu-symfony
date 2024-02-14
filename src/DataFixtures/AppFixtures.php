@@ -10,6 +10,7 @@ use App\Entity\Section;
 use App\Entity\User;
 use App\Repository\AllergenRepository;
 use App\Service\MenuService;
+use App\Service\RestaurantService;
 use App\Service\SectionService;
 use Bezhanov\Faker\Provider\Commerce;
 use Bluemmb\Faker\PicsumPhotosProvider;
@@ -27,16 +28,18 @@ class AppFixtures extends Fixture
     private LoggerInterface $logger;
     private UserPasswordHasherInterface $passwordHasher;
     private MenuService $menuService;
+    private RestaurantService $restaurantService;
     private SectionService $sectionService;
 
     /** @var Allergen[] $allergens */
     private array $allergens;
 
-    public function __construct(LoggerInterface $logger, UserPasswordHasherInterface $passwordHasher, MenuService $menuService, SectionService $sectionService, AllergenRepository $allergenRepository)
+    public function __construct(LoggerInterface $logger, UserPasswordHasherInterface $passwordHasher, MenuService $menuService, RestaurantService $restaurantService, SectionService $sectionService, AllergenRepository $allergenRepository)
     {
         $this->logger = $logger;
         $this->passwordHasher = $passwordHasher;
         $this->menuService = $menuService;
+        $this->restaurantService = $restaurantService;
         $this->sectionService = $sectionService;
         $this->allergens = $allergenRepository->findAll();
         $this->faker = Factory::create("fr_FR");
@@ -91,6 +94,7 @@ class AppFixtures extends Fixture
 
             $aLaCarteStartersMenu = $this->createMenu(
                 "Entrées",
+                $restaurant,
                 description: $this->faker->boolean() ? $this->faker->sentence(12) : null,
             );
             $this->createSectionInMenu(
@@ -104,6 +108,7 @@ class AppFixtures extends Fixture
 
             $aLaCarteDishesMenu = $this->createMenu(
                 "Plats",
+                $restaurant,
                 description: $this->faker->boolean() ? $this->faker->sentence(12) : null
             );
             $this->createSectionInMenu(
@@ -123,6 +128,7 @@ class AppFixtures extends Fixture
 
             $aLaCarteDessertsMenu = $this->createMenu(
                 "Desserts",
+                $restaurant,
                 description: $this->faker->boolean() ? $this->faker->sentence(12) : null
             );
             $this->createSectionInMenu(
@@ -136,6 +142,7 @@ class AppFixtures extends Fixture
 
             $softDrinksMenu = $this->createMenu(
                 "Sans alcool",
+                $restaurant,
                 description: $this->faker->boolean() ? $this->faker->sentence(12) : null
             );
             $this->createSectionInMenu(
@@ -154,6 +161,7 @@ class AppFixtures extends Fixture
 
             $alcoholsMenu = $this->createMenu(
                 "Alcool",
+                $restaurant,
                 description: $this->faker->boolean() ? $this->faker->sentence(12) : null
             );
             $this->createSectionInMenu(
@@ -183,11 +191,9 @@ class AppFixtures extends Fixture
         $manager->flush();
     }
 
-    /**
-     * @param callable(): ProductData $productDataProvider
-     */
     private function createMenu(
         string $name,
+        Restaurant $restaurant,
         bool $isVisible = true,
         ?string $description = null,
         ?string $icon = null
@@ -199,6 +205,7 @@ class AppFixtures extends Fixture
             ->setDescription($description)
             ->setIcon($icon) // TODO: setup possible icons
         ;
+        $this->restaurantService->addMenuToRestaurant($restaurant, $menu)->setVisible($isVisible);
 
         return $menu;
     }
@@ -217,7 +224,7 @@ class AppFixtures extends Fixture
 
         $section = new Section();
         $section->setName($name);
-        $this->menuService->addSectionToMenu($menu, $section);
+        $this->menuService->addSectionToMenu($menu, $section)->setVisible(true);
 
         $this->createProducts($productDataProvider, $section, $productsAmount, addRandomAllergens: $addRandomAllergens);
 

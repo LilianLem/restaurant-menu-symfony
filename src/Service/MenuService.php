@@ -37,8 +37,9 @@ class MenuService
 
         $higherSections = $menu->getMenuSections()->filter((fn(MenuSection $menuSection) => $menuSection->getRank() > $rank));
 
-        foreach($higherSections as $section) {
-            $section->setRank($section->getRank() - 1);
+        /** @var MenuSection $menuSection */
+        foreach($higherSections as $menuSection) {
+            $menuSection->setRank($menuSection->getRank() - 1);
         }
     }
 }

@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MenuRepository::class)]
@@ -15,38 +16,52 @@ class Menu
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 1000, maxMessage: "La description ne doit pas dépasser {{ limit }} caractères")]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $description = null;
 
-    #[ORM\Column]
+    #[ORM\Column(options: ["default" => false])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?bool $visible = null;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: MenuSection::class, orphanRemoval: true, cascade: ["persist", "remove"])]
+    #[Groups(["getRestaurants", "getMenus"])]
     private Collection $menuSections;
 
-    #[ORM\OneToMany(mappedBy: 'menu', targetEntity: RestaurantMenu::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'menu', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist"])]
+    #[Groups(["getMenus", "getSections", "getProducts"])]
     private Collection $menuRestaurants;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255, maxMessage: "Le nom de l'icône ne doit pas dépasser {{ limit }} caractères")]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $icon = null;
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $price = null;
+
+    #[ORM\Column(options: ["default" => false])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    private ?bool $inTrash = null;
 
     public function __construct()
     {
+        $this->visible = false;
         $this->menuSections = new ArrayCollection();
         $this->menuRestaurants = new ArrayCollection();
+        $this->inTrash = false;
     }
 
     public function getId(): ?int
@@ -181,5 +196,17 @@ class Menu
         }
 
         return $this->getMenuSections()->reduce(fn(int $maxRank, MenuSection $menuSection): int => $menuSection->getRank() > $maxRank ? $menuSection->getRank() : $maxRank, 0);
+    }
+
+    public function isInTrash(): ?bool
+    {
+        return $this->inTrash;
+    }
+
+    public function setInTrash(bool $inTrash): static
+    {
+        $this->inTrash = $inTrash;
+
+        return $this;
     }
 }

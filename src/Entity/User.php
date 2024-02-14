@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -19,15 +20,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
     #[Assert\Length(max: 180, maxMessage: "L'adresse e-mail ne peut pas dépasser {{ limit }} caractères")]
     #[Assert\Email(message: "L'adresse e-mail renseignée n'est pas valide")]
     #[Assert\NotBlank]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $email = null;
 
     #[ORM\Column]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private array $roles = [];
 
     // TODO: check if validators are checked correctly, and if NotBlank validator is not blocking everything
@@ -43,12 +47,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
-    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Restaurant::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Restaurant::class, orphanRemoval: true, cascade: ["persist"])]
     private Collection $restaurants;
+
+    #[ORM\Column(options: ["default" => true])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    private ?bool $enabled = null;
 
     public function __construct()
     {
         $this->restaurants = new ArrayCollection();
+        $this->enabled = true;
     }
 
     public function getId(): ?int
@@ -147,6 +156,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $restaurant->setOwner(null);
             }
         }
+
+        return $this;
+    }
+
+    public function isEnabled(): ?bool
+    {
+        return $this->enabled;
+    }
+
+    public function setEnabled(bool $enabled): static
+    {
+        $this->enabled = $enabled;
 
         return $this;
     }

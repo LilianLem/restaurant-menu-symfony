@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: RestaurantRepository::class)]
@@ -22,35 +23,48 @@ class Restaurant
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255, maxMessage: "Le lien vers le logo ne doit pas dépasser {{ limit }} caractères")]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $logo = null;
 
-    #[ORM\Column]
+    #[ORM\Column(options: ["default" => false])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?bool $visible = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 1000, maxMessage: "La description ne doit pas dépasser {{ limit }} caractères")]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $description = null;
 
-    #[ORM\OneToMany(mappedBy: 'restaurant', targetEntity: RestaurantMenu::class, orphanRemoval: true)]
+    #[ORM\OneToMany(mappedBy: 'restaurant', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist", "remove"])]
+    #[Groups(["getRestaurants"])]
     private Collection $restaurantMenus;
 
     #[ORM\ManyToOne(inversedBy: 'restaurants')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotBlank]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?User $owner = null;
+
+    #[ORM\Column(options: ["default" => false])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    private ?bool $inTrash = null;
 
     public function __construct()
     {
+        $this->visible = false;
         $this->restaurantMenus = new ArrayCollection();
+        $this->inTrash = false;
     }
 
     public function getId(): ?int
@@ -144,6 +158,27 @@ class Restaurant
     public function setOwner(?User $owner): static
     {
         $this->owner = $owner;
+
+        return $this;
+    }
+
+    public function getMaxMenuRank(): int
+    {
+        if($this->getRestaurantMenus()->isEmpty()) {
+            return 0;
+        }
+
+        return $this->getRestaurantMenus()->reduce(fn(int $maxRank, RestaurantMenu $rm): int => $rm->getRank() > $maxRank ? $rm->getRank() : $maxRank, 0);
+    }
+
+    public function isInTrash(): ?bool
+    {
+        return $this->inTrash;
+    }
+
+    public function setInTrash(bool $inTrash): static
+    {
+        $this->inTrash = $inTrash;
 
         return $this;
     }

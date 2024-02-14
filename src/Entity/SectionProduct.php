@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\SectionProductRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SectionProductRepository::class)]
@@ -20,27 +21,30 @@ use Symfony\Component\Validator\Constraints as Assert;
     errorPath: "rank",
     message: "Ce rang de produit est déjà assigné sur cette section",
 )]
-// TODO: also check that the product is not already linked to another section of the same menu (create a custom validation function?)
 class SectionProduct
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'sectionProducts')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotBlank]
+    #[Groups(["getProducts"])]
     private ?Section $section = null;
 
-    #[ORM\ManyToOne(inversedBy: 'sectionProducts', cascade: ["persist"])]
+    #[ORM\ManyToOne(inversedBy: 'sectionProducts', cascade: ["persist", "detach"])]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotBlank]
+    #[Groups(["getRestaurants", "getMenus", "getSections"])]
     private ?Product $product = null;
 
     #[ORM\Column(options: ["unsigned" => true])]
     #[Assert\Positive(message: "Le rang doit être positif")]
     #[Assert\NotBlank]
+    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $rank = null;
 
     public function getId(): ?int
