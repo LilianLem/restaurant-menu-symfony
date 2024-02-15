@@ -28,7 +28,7 @@ class Restaurant
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: "Le nom du restaurant est obligatoire")]
     #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $name = null;
 
@@ -52,7 +52,7 @@ class Restaurant
 
     #[ORM\ManyToOne(inversedBy: 'restaurants')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank]
+    //#[Assert\NotBlank(message: "Un propriétaire du restaurant doit être spécifié")]
     #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?User $owner = null;
 

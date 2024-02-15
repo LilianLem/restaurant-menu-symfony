@@ -26,7 +26,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180, unique: true)]
     #[Assert\Length(max: 180, maxMessage: "L'adresse e-mail ne peut pas dépasser {{ limit }} caractères")]
     #[Assert\Email(message: "L'adresse e-mail renseignée n'est pas valide")]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: "L'adresse e-mail est obligatoire")]
     #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $email = null;
 
@@ -38,7 +38,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\PasswordStrength(["message" => "Ce mot de passe est trop vulnérable. Veuillez choisir un mot de passe plus sécurisé."])]
     #[Assert\NotCompromisedPassword(message: "Ce mot de passe est présent dans une fuite de données connue. Veuillez en choisir un autre.", skipOnError: true)]
     #[Assert\Length(min: 12, max: 128, minMessage: "Ce mot de passe est trop court, il doit compter au moins {{ limit }} caractères", maxMessage: "Ce mot de passe est trop long, il ne doit pas dépasser {{ limit }} caractères")]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: "Un mot de passe est obligatoire")]
     protected string $plainPassword = "";
 
     /**

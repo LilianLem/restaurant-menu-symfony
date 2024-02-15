@@ -31,13 +31,13 @@ class SectionProduct
 
     #[ORM\ManyToOne(inversedBy: 'sectionProducts')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank]
+    //#[Assert\NotBlank]
     #[Groups(["getProducts"])]
     private ?Section $section = null;
 
     #[ORM\ManyToOne(inversedBy: 'sectionProducts', cascade: ["persist", "detach"])]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank]
+    //#[Assert\NotBlank]
     #[Groups(["getRestaurants", "getMenus", "getSections"])]
     private ?Product $product = null;
 

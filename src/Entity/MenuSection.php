@@ -31,13 +31,13 @@ class MenuSection
 
     #[ORM\ManyToOne(inversedBy: 'menuSections', fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank]
+    //#[Assert\NotBlank]
     #[Groups(["getSections", "getProducts"])]
     private ?Menu $menu = null;
 
     #[ORM\OneToOne(inversedBy: 'sectionMenu', cascade: ['persist', 'remove'], fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank]
+    //#[Assert\NotBlank]
     #[Groups(["getRestaurants", "getMenus"])]
     private ?Section $section = null;
 

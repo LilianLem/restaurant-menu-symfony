@@ -29,16 +29,15 @@ class RestaurantMenu
     #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?int $id = null;
 
-    // TODO: résoudre boucle ici
     #[ORM\ManyToOne(inversedBy: 'restaurantMenus')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank]
+    //#[Assert\NotBlank]
     #[Groups(["getMenus", "getSections", "getProducts"])]
     private ?Restaurant $restaurant = null;
 
     #[ORM\ManyToOne(inversedBy: 'menuRestaurants', cascade: ["persist", "detach"])]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank]
+    //#[Assert\NotBlank]
     #[Groups(["getRestaurants"])]
     private ?Menu $menu = null;
 

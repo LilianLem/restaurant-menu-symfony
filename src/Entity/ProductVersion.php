@@ -25,12 +25,12 @@ class ProductVersion
 
     #[ORM\ManyToOne(inversedBy: 'versions')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank]
+    //#[Assert\NotBlank]
     private ?Product $product = null;
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: "Le nom de la variante du produit est obligatoire")]
     #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $name = null;
 

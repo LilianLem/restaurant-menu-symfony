@@ -6,14 +6,18 @@ use App\Entity\MenuSection;
 use App\Entity\Section;
 use App\Repository\MenuRepository;
 use App\Repository\SectionRepository;
+use App\Service\ExceptionService;
+use App\Service\MenuService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class SectionController extends AbstractController
 {
@@ -47,32 +51,41 @@ class SectionController extends AbstractController
         Request $request,
         SerializerInterface $serializer,
         UrlGeneratorInterface $urlGenerator,
-        MenuRepository $menuRepository
+        MenuRepository $menuRepository,
+        MenuService $menuService,
+        ValidatorInterface $validator,
+        ExceptionService $exceptionService
     )
     {
         $section = $serializer->deserialize($request->getContent(), Section::class, "json");
 
+        $validationErrors = $validator->validate($section);
+        if($validationErrors->count()) {
+            return $exceptionService->generateValidationErrorsResponse($validationErrors);
+        }
+
         $content = $request->toArray();
 
-        if(!$content["menuId"]) {
-            // TODO: throw error
+        if(empty($content["menuId"])) {
+            throw new HttpException(
+                Response::HTTP_BAD_REQUEST,
+                "Un premier menu doit être spécifié pour créer une section"
+            );
         }
 
-        $menu = $menuRepository->find($content["menuId"]);
-
-        if(!$menu) {
-            // TODO: throw error
+        $firstMenu = $menuRepository->find($content["menuId"]);
+        if(!$firstMenu) {
+            throw new HttpException(
+                Response::HTTP_BAD_REQUEST,
+                "Le menu spécifié est introuvable"
+            );
         }
-
-        $sectionMenu = new MenuSection();
-        $sectionMenu->setMenu($menu)
-            ->setRank($menu->getMaxSectionRank() + 1)
-        ;
-
-        $section->setSectionMenu($sectionMenu);
 
         $this->em->persist($section);
+        $menuService->addSectionToMenu($firstMenu, $section);
+
         $this->em->flush();
+        $this->em->refresh($section);
 
         $location = $urlGenerator->generate("section_one", ["id" => $section->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 

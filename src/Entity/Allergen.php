@@ -22,7 +22,7 @@ class Allergen
 
     #[ORM\Column(length: 64, unique: true)]
     #[Assert\Length(max: 64, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: "Le nom de l'allergène est obligatoire")]
     #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $name = null;
 

@@ -21,7 +21,7 @@ class Menu
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
-    #[Assert\NotBlank]
+    #[Assert\NotBlank(message: "Le nom du menu est obligatoire")]
     #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
     private ?string $name = null;
 

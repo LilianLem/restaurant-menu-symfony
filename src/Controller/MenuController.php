@@ -3,17 +3,20 @@
 namespace App\Controller;
 
 use App\Entity\Menu;
-use App\Entity\RestaurantMenu;
 use App\Repository\MenuRepository;
 use App\Repository\RestaurantRepository;
+use App\Service\ExceptionService;
+use App\Service\RestaurantService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class MenuController extends AbstractController
 {
@@ -47,31 +50,41 @@ class MenuController extends AbstractController
         Request $request,
         SerializerInterface $serializer,
         UrlGeneratorInterface $urlGenerator,
-        RestaurantRepository $restaurantRepository
+        RestaurantRepository $restaurantRepository,
+        RestaurantService $restaurantService,
+        ValidatorInterface $validator,
+        ExceptionService $exceptionService
     )
     {
         $menu = $serializer->deserialize($request->getContent(), Menu::class, "json");
 
+        $validationErrors = $validator->validate($menu);
+        if($validationErrors->count()) {
+            return $exceptionService->generateValidationErrorsResponse($validationErrors);
+        }
+
         $content = $request->toArray();
 
-        if(!$content["restaurantId"]) {
-            // TODO: throw error
+        if(empty($content["restaurantId"])) {
+            throw new HttpException(
+                Response::HTTP_BAD_REQUEST,
+                "Un premier restaurant doit être spécifié pour créer un menu"
+            );
         }
 
         $firstRestaurant = $restaurantRepository->find($content["restaurantId"]);
-
         if(!$firstRestaurant) {
-            // TODO: throw error
+            throw new HttpException(
+                Response::HTTP_BAD_REQUEST,
+                "Le restaurant spécifié est introuvable"
+            );
         }
 
-        $menuRestaurant = new RestaurantMenu();
-        $menuRestaurant->setRestaurant($firstRestaurant)
-            ->setRank($firstRestaurant->getMaxMenuRank() + 1);
-
-        $menu->addMenuRestaurant($menuRestaurant);
-
         $this->em->persist($menu);
+        $restaurantService->addMenuToRestaurant($firstRestaurant, $menu);
+
         $this->em->flush();
+        $this->em->refresh($menu);
 
         $location = $urlGenerator->generate("menu_one", ["id" => $menu->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 

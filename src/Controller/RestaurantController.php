@@ -5,14 +5,17 @@ namespace App\Controller;
 use App\Entity\Restaurant;
 use App\Repository\RestaurantRepository;
 use App\Repository\UserRepository;
+use App\Service\ExceptionService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class RestaurantController extends AbstractController
 {
@@ -43,17 +46,36 @@ class RestaurantController extends AbstractController
         Request $request,
         SerializerInterface $serializer,
         UrlGeneratorInterface $urlGenerator,
-        UserRepository $userRepository
+        UserRepository $userRepository,
+        ValidatorInterface $validator,
+        ExceptionService $exceptionService
     )
     {
         $restaurant = $serializer->deserialize($request->getContent(), Restaurant::class, "json");
 
+        $validationErrors = $validator->validate($restaurant);
+        if($validationErrors->count()) {
+            return $exceptionService->generateValidationErrorsResponse($validationErrors);
+        }
+
         $content = $request->toArray();
 
-        $ownerId = $content["ownerId"] ?? null;
-        if($ownerId) {
-            $restaurant->setOwner($userRepository->find($ownerId));
+        if(empty($content["ownerId"])) {
+            throw new HttpException(
+                Response::HTTP_BAD_REQUEST,
+                "Un propriétaire du restaurant doit être spécifié",
+            );
         }
+
+        $owner = $userRepository->find($content["ownerId"]);
+        if(!$owner) {
+            throw new HttpException(
+                Response::HTTP_BAD_REQUEST,
+                "L'utilisateur spécifié en tant que propriétaire est introuvable"
+            );
+        }
+
+        $restaurant->setOwner($owner);
 
         $this->em->persist($restaurant);
         $this->em->flush();
