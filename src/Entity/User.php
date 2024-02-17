@@ -38,8 +38,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\PasswordStrength(["message" => "Ce mot de passe est trop vulnérable. Veuillez choisir un mot de passe plus sécurisé."])]
     #[Assert\NotCompromisedPassword(message: "Ce mot de passe est présent dans une fuite de données connue. Veuillez en choisir un autre.", skipOnError: true)]
     #[Assert\Length(min: 12, max: 128, minMessage: "Ce mot de passe est trop court, il doit compter au moins {{ limit }} caractères", maxMessage: "Ce mot de passe est trop long, il ne doit pas dépasser {{ limit }} caractères")]
-    #[Assert\NotBlank(message: "Un mot de passe est obligatoire")]
-    protected string $plainPassword = "";
+    #[Assert\NotBlank(message: "Un mot de passe est obligatoire", groups: ["auth"])]
+    protected ?string $plainPassword = null;
 
     /**
      * @var string The hashed password
