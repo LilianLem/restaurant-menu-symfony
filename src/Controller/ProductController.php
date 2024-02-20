@@ -24,7 +24,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ProductController extends AbstractController
 {
-    private ProductRepository $repository;
+    /*private ProductRepository $repository;
 
     public function __construct(ProductRepository $repository, EntityManagerInterface $em)
     {
@@ -120,5 +120,5 @@ class ProductController extends AbstractController
         $this->em->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
-    }
+    }*/
 }

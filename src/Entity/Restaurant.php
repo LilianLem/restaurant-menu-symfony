@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\RestaurantRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -18,6 +19,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     errorPath: "name",
     message: "Vous possédez déjà un restaurant avec ce nom",
 )]
+#[ApiResource]
 class Restaurant
 {
     #[ORM\Id]

@@ -19,7 +19,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class RestaurantController extends AbstractController
 {
-    private RestaurantRepository $repository;
+    /*private RestaurantRepository $repository;
 
     public function __construct(RestaurantRepository $repository, EntityManagerInterface $em)
     {
@@ -101,5 +101,5 @@ class RestaurantController extends AbstractController
         $this->em->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
-    }
+    }*/
 }

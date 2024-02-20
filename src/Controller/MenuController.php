@@ -20,7 +20,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class MenuController extends AbstractController
 {
-    private MenuRepository $repository;
+    /*private MenuRepository $repository;
 
     private SectionController $sectionController;
 
@@ -102,5 +102,5 @@ class MenuController extends AbstractController
         $this->em->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
-    }
+    }*/
 }

@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
 use App\Repository\ProductVersionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -15,6 +16,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     errorPath: "name",
     message: "Cette version existe déjà",
 )]
+#[ApiResource]
 class ProductVersion
 {
     #[ORM\Id]

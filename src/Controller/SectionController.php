@@ -21,7 +21,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class SectionController extends AbstractController
 {
-    private SectionRepository $repository;
+    /*private SectionRepository $repository;
 
     private ProductController $productController;
 
@@ -105,5 +105,5 @@ class SectionController extends AbstractController
         $this->em->flush();
 
         return $this->json(null, Response::HTTP_NO_CONTENT);
-    }
+    }*/
 }
