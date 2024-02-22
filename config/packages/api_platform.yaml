@@ -3,6 +3,8 @@ api_platform:
     version: 0.1.0
     formats:
         jsonld: ['application/ld+json']
+        json: ['application/json']
+        csv: ['text/csv']
     docs_formats:
         jsonld: ['application/ld+json']
         jsonopenapi: ['application/vnd.openapi+json']
