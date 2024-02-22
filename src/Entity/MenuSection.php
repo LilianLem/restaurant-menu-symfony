@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Patch;
 use App\Repository\MenuSectionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -21,34 +23,38 @@ use Symfony\Component\Validator\Constraints as Assert;
     errorPath: "rank",
     message: "Ce rang de section est déjà assigné sur ce menu",
 )]
+#[ApiResource(
+    operations: [new Patch()],
+    denormalizationContext: ["groups" => "menuSection:write"]
+)]
 class MenuSection
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getProducts"])]
+    #[Groups(["up:section:read", "section:read", "menu:read:get"])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'menuSections', fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: false)]
     //#[Assert\NotBlank]
-    #[Groups(["getSections", "getProducts"])]
+    #[Groups(["up:section:read", "section:read:self"])]
     private ?Menu $menu = null;
 
     #[ORM\OneToOne(inversedBy: 'sectionMenu', cascade: ['persist', 'remove'], fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: false)]
     //#[Assert\NotBlank]
-    #[Groups(["getRestaurants", "getMenus"])]
+    #[Groups(["menu:read:get"])]
     private ?Section $section = null;
 
     #[ORM\Column(options: ["default" => false])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["up:section:read", "section:read", "menuSection:write", "menu:read:get"])]
     private ?bool $visible = null;
 
     #[ORM\Column(options: ["unsigned" => true])]
     #[Assert\Positive(message: "Le rang doit être positif")]
     #[Assert\NotBlank]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["up:section:read", "section:read", "menuSection:write", "menu:read:get"])]
     private ?int $rank = null;
 
     public function __construct()

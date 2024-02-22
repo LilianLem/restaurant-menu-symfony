@@ -2,7 +2,11 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use App\Repository\AllergenRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -13,22 +17,28 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AllergenRepository::class)]
 #[UniqueEntity("name", message: "Cet allergène existe déjà")]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get()
+    ]
+)]
 class Allergen
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["product:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 64, unique: true)]
     #[Assert\Length(max: 64, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Le nom de l'allergène est obligatoire")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["product:read"])]
     private ?string $name = null;
 
     #[ORM\ManyToMany(targetEntity: Product::class, mappedBy: 'allergens')]
+    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)]
     private Collection $products;
 
     public function __construct()

@@ -2,7 +2,17 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
+use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Repository\SectionRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -11,31 +21,58 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SectionRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(
+            normalizationContext: ["groups" => ["section:read", "section:read:self", "section:read:get", "product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]]
+        ),
+        new Post(),
+        new Delete(),
+        new Patch(
+            denormalizationContext: ["groups" => ["section:write", "section:write:update"]]
+        ),
+        new Put(
+            denormalizationContext: ["groups" => ["section:write", "section:write:update"]]
+        )
+    ],
+    normalizationContext: ["groups" => ["section:read", "section:read:self"]],
+    denormalizationContext: ["groups" => "section:write"]
+)]
+#[ApiFilter(SearchFilter::class, properties: [
+    "sectionProducts.product" => SearchFilter::STRATEGY_EXACT,
+    "sectionMenu.menu" => SearchFilter::STRATEGY_EXACT,
+    "sectionMenu.menu.menuRestaurants.restaurant" => SearchFilter::STRATEGY_EXACT,
+    "sectionMenu.menu.menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
+])]
 class Section
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["section:read", "up:product:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 128, nullable: true)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["section:read", "section:write", "up:product:read"])]
+    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_PARTIAL)]
     private ?string $name = null;
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["section:read", "section:write", "up:product:read"])]
+    #[ApiFilter(RangeFilter::class)]
+    #[ApiFilter(ExistsFilter::class)]
     private ?int $price = null;
 
     #[ORM\OneToMany(mappedBy: 'section', targetEntity: SectionProduct::class, orphanRemoval: true, cascade: ["persist"])]
-    #[Groups(["getRestaurants", "getMenus", "getSections"])]
+    #[Groups(["section:read", "section:write:update"])]
+    #[ApiFilter(ExistsFilter::class)]
     private Collection $sectionProducts;
 
     #[ORM\OneToOne(mappedBy: 'section', cascade: ['persist', 'remove'])]
-    #[Groups(["getSections", "getProducts"])]
+    #[Groups(["section:read:self", "section:write", "up:section:read"])]
     private ?MenuSection $sectionMenu = null;
 
     public function __construct()
@@ -119,6 +156,7 @@ class Section
         return $this;
     }
 
+    #[Groups(["section:read:get"])]
     public function getMaxProductRank(): int
     {
         if($this->getSectionProducts()->isEmpty()) {

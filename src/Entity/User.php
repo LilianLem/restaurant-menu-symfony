@@ -2,7 +2,16 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -16,24 +25,41 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[UniqueEntity("email", message: "Une erreur est survenue dans la création du compte. Si vous en avez déjà un, cliquez sur Connexion")]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(
+            normalizationContext: ["groups" => ["user:read", "user:read:get", "restaurant:read"]]
+        ),
+        new Post(),
+        new Delete(),
+        new Patch(
+            denormalizationContext: ["groups" => ["user:write", "user:write:update"]]
+        )
+    ],
+    normalizationContext: ["groups" => "user:read"],
+    denormalizationContext: ["groups" => "user:write"]
+)]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["user:read", "up:restaurant:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
     #[Assert\Length(max: 180, maxMessage: "L'adresse e-mail ne peut pas dépasser {{ limit }} caractères")]
     #[Assert\Email(message: "L'adresse e-mail renseignée n'est pas valide")]
     #[Assert\NotBlank(message: "L'adresse e-mail est obligatoire")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["user:read", "user:write", "up:restaurant:read"])]
+    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_START)]
+    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_PARTIAL)]
     private ?string $email = null;
 
     #[ORM\Column]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["user:read", "user:write"])]
+    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)] // TODO: check if working as expected (find one role at a time)
     private array $roles = [];
 
     // TODO: check if validators are checked correctly, and if NotBlank validator is not blocking everything
@@ -41,6 +67,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotCompromisedPassword(message: "Ce mot de passe est présent dans une fuite de données connue. Veuillez en choisir un autre.", skipOnError: true)]
     #[Assert\Length(min: 12, max: 128, minMessage: "Ce mot de passe est trop court, il doit compter au moins {{ limit }} caractères", maxMessage: "Ce mot de passe est trop long, il ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Un mot de passe est obligatoire", groups: ["auth"])]
+    #[Groups(["user:write"])]
     protected ?string $plainPassword = null;
 
     /**
@@ -50,10 +77,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Restaurant::class, orphanRemoval: true, cascade: ["persist"])]
+    #[ApiFilter(ExistsFilter::class)]
+    #[Groups(["user:read", "user:write:update"])]
     private Collection $restaurants;
 
     #[ORM\Column(options: ["default" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["user:read", "user:write", "up:restaurant:read"])]
+    #[ApiFilter(BooleanFilter::class)]
     private ?bool $enabled = null;
 
     public function __construct()
@@ -104,6 +134,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
+
+        return $this;
+    }
+
+    // TODO: need a confirmation this is the right way of doing things with API before using that
+    public function setPlainPassword(string $plainPassword): static
+    {
+        $this->plainPassword = $plainPassword;
 
         return $this;
     }

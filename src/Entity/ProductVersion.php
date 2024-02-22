@@ -3,6 +3,12 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Repository\ProductVersionRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -16,38 +22,52 @@ use Symfony\Component\Validator\Constraints as Assert;
     errorPath: "name",
     message: "Cette version existe déjà",
 )]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(),
+        new Post(
+            denormalizationContext: ["groups" => ["productVersion:write", "productVersion:write:post"]]
+        ),
+        new Delete(),
+        new Patch()
+    ],
+    normalizationContext: ["groups" => ["productVersion:read", "product:read"]],
+    denormalizationContext: ["groups" => ["productVersion:write"]],
+)]
 class ProductVersion
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["productVersion:read"])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'versions')]
     #[ORM\JoinColumn(nullable: false)]
-    //#[Assert\NotBlank]
-    private ?Product $product = null;
+    #[Groups(["productVersion:read", "productVersion:write:post"])]
+    #[Assert\NotBlank(message: "La variante de produit doit être liée à un produit")]
+    private readonly ?Product $product;
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Le nom de la variante du produit est obligatoire")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["productVersion:read", "productVersion:write"])]
     private ?string $name = null;
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["productVersion:read", "productVersion:write"])]
     private ?int $price = null;
 
     #[ORM\Column(options: ["default" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["productVersion:read", "productVersion:write"])]
     private ?bool $visible = null;
 
-    public function __construct()
+    public function __construct(Product $product)
     {
         $this->visible = true;
+        $this->product = $product;
     }
 
     public function getId(): ?int
@@ -60,12 +80,12 @@ class ProductVersion
         return $this->product;
     }
 
-    public function setProduct(?Product $product): static
+    /*public function setProduct(?Product $product): static
     {
         $this->product = $product;
 
         return $this;
-    }
+    }*/
 
     public function getName(): ?string
     {

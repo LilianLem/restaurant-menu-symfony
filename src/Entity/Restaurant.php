@@ -2,7 +2,16 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
 use App\Repository\RestaurantRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -19,47 +28,72 @@ use Symfony\Component\Validator\Constraints as Assert;
     errorPath: "name",
     message: "Vous possédez déjà un restaurant avec ce nom",
 )]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(
+            normalizationContext: ["groups" => ["restaurant:read", "restaurant:read:self", "restaurant:read:get", "menu:read", "up:restaurant:read"]]
+        ),
+        new Post(),
+        new Delete(),
+        new Patch(
+            denormalizationContext: ["groups" => ["restaurant:write", "restaurant:write:update"]]
+        )
+    ],
+    normalizationContext: ["groups" => ["restaurant:read", "restaurant:read:self"]],
+    denormalizationContext: ["groups" => "restaurant:write"]
+)]
+#[ApiFilter(SearchFilter::class, properties: [
+    "restaurantMenus.menu" => SearchFilter::STRATEGY_EXACT,
+    "restaurantMenus.menu.menuSections.section" => SearchFilter::STRATEGY_EXACT,
+    "restaurantMenus.menu.menuSections.section.sectionProducts.product" => SearchFilter::STRATEGY_EXACT
+])]
 class Restaurant
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["restaurant:read", "up:menu:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Le nom du restaurant est obligatoire")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])]
+    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_WORD_START)]
     private ?string $name = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255, maxMessage: "Le lien vers le logo ne doit pas dépasser {{ limit }} caractères")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])]
+    #[ApiFilter(ExistsFilter::class)]
     private ?string $logo = null;
 
     #[ORM\Column(options: ["default" => false])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])]
+    #[ApiFilter(BooleanFilter::class)]
     private ?bool $visible = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 1000, maxMessage: "La description ne doit pas dépasser {{ limit }} caractères")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])]
     private ?string $description = null;
 
     #[ORM\OneToMany(mappedBy: 'restaurant', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist", "remove"])]
-    #[Groups(["getRestaurants"])]
+    #[Groups(["restaurant:read", "restaurant:write:update"])]
+    #[ApiFilter(ExistsFilter::class)]
     private Collection $restaurantMenus;
 
     #[ORM\ManyToOne(inversedBy: 'restaurants')]
     #[ORM\JoinColumn(nullable: false)]
     //#[Assert\NotBlank(message: "Un propriétaire du restaurant doit être spécifié")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["restaurant:read:self", "restaurant:write", "up:restaurant:read"])]
+    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)]
     private ?User $owner = null;
 
     #[ORM\Column(options: ["default" => false])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])]
+    #[ApiFilter(BooleanFilter::class)]
     private ?bool $inTrash = null;
 
     public function __construct()
@@ -164,6 +198,7 @@ class Restaurant
         return $this;
     }
 
+    #[Groups(["restaurant:read:get"])]
     public function getMaxMenuRank(): int
     {
         if($this->getRestaurantMenus()->isEmpty()) {

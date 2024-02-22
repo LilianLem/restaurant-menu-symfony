@@ -2,7 +2,18 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
+use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Repository\ProductRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -12,45 +23,72 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(
+            normalizationContext: ["groups" => ["product:read", "product:read:self", "up:product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]]
+        ),
+        new Post(),
+        new Delete(),
+        new Patch(),
+        new Put()
+    ],
+    normalizationContext: ["groups" => ["product:read", "product:read:self"]],
+    denormalizationContext: ["groups" => "product:write"]
+)]
+#[ApiFilter(SearchFilter::class, properties: [
+    "sectionProducts.section" => SearchFilter::STRATEGY_EXACT,
+    "sectionProducts.section.sectionMenu.menu" => SearchFilter::STRATEGY_EXACT,
+    "sectionProducts.section.sectionMenu.menu.menuRestaurants.restaurant" => SearchFilter::STRATEGY_EXACT,
+    "sectionProducts.section.sectionMenu.menu.menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
+])]
 class Product
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["product:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Le nom du produit est obligatoire")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["product:read", "product:write"])]
+    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_PARTIAL)]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 500, maxMessage: "La description ne doit pas dépasser {{ limit }} caractères")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["product:read", "product:write"])]
     private ?string $description = null;
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true, "default" => 0])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["product:read", "product:write"])]
+    #[ApiFilter(RangeFilter::class)]
+    #[ApiFilter(ExistsFilter::class)]
     private ?int $price = null;
 
     #[ORM\Column(options: ["default" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["product:read", "product:write"])]
+    #[ApiFilter(BooleanFilter::class)]
     private ?bool $visible = null;
 
+    // TODO: allow excluding products by allergen
     #[ORM\ManyToMany(targetEntity: Allergen::class, inversedBy: 'products')]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["product:read", "product:write"])]
+    #[ApiFilter(ExistsFilter::class)]
+    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)]
     private Collection $allergens;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductVersion::class, orphanRemoval: true, cascade: ["persist"])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["product:read:self", "section:read:self"])]
+    #[ApiFilter(ExistsFilter::class)]
     private Collection $versions;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: SectionProduct::class, orphanRemoval: true, cascade: ["persist", "detach"])]
-    #[Groups(["getProducts"])]
+    #[Groups(["product:read:self", "up:product:read"])]
     private Collection $sectionProducts;
 
     public function __construct()

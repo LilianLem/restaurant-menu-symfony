@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Patch;
 use App\Repository\SectionProductRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -21,30 +23,34 @@ use Symfony\Component\Validator\Constraints as Assert;
     errorPath: "rank",
     message: "Ce rang de produit est déjà assigné sur cette section",
 )]
+#[ApiResource(
+    operations: [new Patch()],
+    denormalizationContext: ["groups" => "sectionProduct:write"]
+)]
 class SectionProduct
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["up:product:read", "product:read", "section:read:get"])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'sectionProducts')]
     #[ORM\JoinColumn(nullable: false)]
     //#[Assert\NotBlank]
-    #[Groups(["getProducts"])]
+    #[Groups(["up:product:read", "product:read:self"])]
     private ?Section $section = null;
 
     #[ORM\ManyToOne(inversedBy: 'sectionProducts', cascade: ["persist", "detach"])]
     #[ORM\JoinColumn(nullable: false)]
     //#[Assert\NotBlank]
-    #[Groups(["getRestaurants", "getMenus", "getSections"])]
+    #[Groups(["section:read:get"])]
     private ?Product $product = null;
 
     #[ORM\Column(options: ["unsigned" => true])]
     #[Assert\Positive(message: "Le rang doit être positif")]
     #[Assert\NotBlank]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["up:product:read", "product:read", "sectionProduct:write", "section:read:get"])]
     private ?int $rank = null;
 
     public function getId(): ?int

@@ -2,7 +2,18 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
+use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Repository\MenuRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -12,50 +23,80 @@ use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MenuRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(
+            normalizationContext: ["groups" => ["menu:read", "menu:read:self", "menu:read:get", "section:read", "up:menu:read", "up:restaurant:read"]]
+        ),
+        new Post(),
+        new Delete(),
+        new Patch(
+            denormalizationContext: ["groups" => ["menu:write", "menu:write:update"]]
+        ),
+        new Put(
+            denormalizationContext: ["groups" => ["menu:write", "menu:write:update"]]
+        )
+    ],
+    normalizationContext: ["groups" => ["menu:read", "menu:read:self"]],
+    denormalizationContext: ["groups" => "menu:write"],
+)]
+#[ApiFilter(SearchFilter::class, properties: [
+    "menuSections.section" => SearchFilter::STRATEGY_EXACT,
+    "menuSections.section.sectionProducts.product" => SearchFilter::STRATEGY_EXACT,
+    "menuRestaurants.restaurant" => SearchFilter::STRATEGY_EXACT,
+    "menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
+])]
 class Menu
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(options: ["unsigned" => true])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["menu:read", "up:section:read"])]
     private ?int $id = null;
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Le nom du menu est obligatoire")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["menu:read", "menu:write", "up:section:read"])]
+    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_PARTIAL)]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Assert\Length(max: 1000, maxMessage: "La description ne doit pas dépasser {{ limit }} caractères")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["menu:read", "menu:write", "up:section:read"])]
     private ?string $description = null;
 
     #[ORM\Column(options: ["default" => false])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["menu:read", "menu:write", "up:section:read"])]
+    #[ApiFilter(BooleanFilter::class)]
     private ?bool $visible = null;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: MenuSection::class, orphanRemoval: true, cascade: ["persist", "remove"])]
-    #[Groups(["getRestaurants", "getMenus"])]
+    #[Groups(["menu:read", "menu:write:update"])]
+    #[ApiFilter(ExistsFilter::class)]
     private Collection $menuSections;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist"])]
-    #[Groups(["getMenus", "getSections", "getProducts"])]
+    #[Groups(["menu:read:self", "menu:write", "up:menu:read"])]
     private Collection $menuRestaurants;
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255, maxMessage: "Le nom de l'icône ne doit pas dépasser {{ limit }} caractères")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["menu:read", "menu:write", "up:section:read"])]
+    #[ApiFilter(ExistsFilter::class)]
     private ?string $icon = null;
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["menu:read", "menu:write", "up:section:read"])]
+    #[ApiFilter(RangeFilter::class)]
+    #[ApiFilter(ExistsFilter::class)]
     private ?int $price = null;
 
     #[ORM\Column(options: ["default" => false])]
-    #[Groups(["getRestaurants", "getMenus", "getSections", "getProducts"])]
+    #[Groups(["menu:read", "menu:write", "up:section:read"])]
+    #[ApiFilter(BooleanFilter::class)]
     private ?bool $inTrash = null;
 
     public function __construct()
@@ -191,6 +232,7 @@ class Menu
         return $this;
     }
 
+    #[Groups(["menu:read:get"])]
     public function getMaxSectionRank(): int
     {
         if($this->getMenuSections()->isEmpty()) {
