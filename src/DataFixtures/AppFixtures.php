@@ -34,6 +34,9 @@ class AppFixtures extends Fixture
     /** @var Allergen[] $allergens */
     private array $allergens;
 
+    /** @var User[] $users */
+    private array $users = [];
+
     public function __construct(LoggerInterface $logger, UserPasswordHasherInterface $passwordHasher, MenuService $menuService, RestaurantService $restaurantService, SectionService $sectionService, AllergenRepository $allergenRepository)
     {
         $this->logger = $logger;
@@ -53,9 +56,6 @@ class AppFixtures extends Fixture
     {
         // --- User ---
 
-        /** @var User[] $users */
-        $users = [];
-
         $adminUser = new User();
         $adminUser->setEmail("admin@restaurant-menu-symfony.tk")
             ->setRoles(["ROLE_USER", "ROLE_ADMIN"])
@@ -71,7 +71,7 @@ class AppFixtures extends Fixture
             ;
 
             $manager->persist($user);
-            $users[] = $user;
+            $this->users[] = $user;
         }
 
         // --- Restaurant ---
@@ -82,11 +82,12 @@ class AppFixtures extends Fixture
         for($i = 1; $i <= 15; $i++) {
             $restaurant = new Restaurant();
             $restaurant->setName($this->faker->company())
-                ->setOwner($this->faker->randomElement($users))
                 ->setDescription($this->faker->boolean() ? $this->faker->sentence(12) : null)
                 ->setVisible($this->faker->boolean(75))
                 ->setLogo($this->faker->imageUrl(250, 100, true))
             ;
+
+            $this->setRestaurantOwner($restaurant);
 
             //TODO: retravailler pour permettre la présence d'un produit dans plusieurs menus
 
@@ -304,5 +305,24 @@ class AppFixtures extends Fixture
         foreach($allergens as $allergen) {
             $product->addAllergen($allergen);
         }
+    }
+
+    private function setRestaurantOwner(Restaurant $restaurant, int $maxRetries = 20): void
+    {
+        $retries = 0;
+        while($retries < $maxRetries) {
+            /** @var User $owner */
+            $user = $this->faker->randomElement($this->users);
+
+            if($user->getRestaurants()->exists(fn(int $key, Restaurant $r) => $r->getName() === $restaurant->getName())) {
+                $retries++;
+                continue;
+            }
+
+            $user->addRestaurant($restaurant);
+            return;
+        }
+
+        throw new Exception("Erreur : impossible de trouver un propriétaire pour un restaurant nommé {$restaurant->getName()} ! Tous les utilisateurs essayés ont déjà un restaurant avec le même nom.");
     }
 }
