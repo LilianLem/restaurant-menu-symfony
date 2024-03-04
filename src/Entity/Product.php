@@ -35,7 +35,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Put()
     ],
     normalizationContext: ["groups" => ["product:read", "product:read:self"]],
-    denormalizationContext: ["groups" => "product:write"]
+    denormalizationContext: ["groups" => ["product:write"]]
 )]
 #[ApiFilter(SearchFilter::class, properties: [
     "sectionProducts.section" => SearchFilter::STRATEGY_EXACT,

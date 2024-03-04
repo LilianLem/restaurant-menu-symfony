@@ -37,7 +37,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         )
     ],
     normalizationContext: ["groups" => ["section:read", "section:read:self"]],
-    denormalizationContext: ["groups" => "section:write"]
+    denormalizationContext: ["groups" => ["section:write"]]
 )]
 #[ApiFilter(SearchFilter::class, properties: [
     "sectionProducts.product" => SearchFilter::STRATEGY_EXACT,

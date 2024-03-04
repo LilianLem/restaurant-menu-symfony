@@ -25,7 +25,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 #[ApiResource(
     operations: [new Patch()],
-    denormalizationContext: ["groups" => "sectionProduct:write"]
+    denormalizationContext: ["groups" => ["sectionProduct:write"]]
 )]
 class SectionProduct
 {

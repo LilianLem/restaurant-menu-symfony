@@ -39,7 +39,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         )
     ],
     normalizationContext: ["groups" => ["menu:read", "menu:read:self"]],
-    denormalizationContext: ["groups" => "menu:write"],
+    denormalizationContext: ["groups" => ["menu:write"]],
 )]
 #[ApiFilter(SearchFilter::class, properties: [
     "menuSections.section" => SearchFilter::STRATEGY_EXACT,

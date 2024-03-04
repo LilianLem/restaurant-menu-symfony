@@ -25,7 +25,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 #[ApiResource(
     operations: [new Patch()],
-    denormalizationContext: ["groups" => "menuSection:write"]
+    denormalizationContext: ["groups" => ["menuSection:write"]]
 )]
 class MenuSection
 {
