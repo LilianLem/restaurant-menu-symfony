@@ -25,23 +25,31 @@ security:
             # https://symfony.com/doc/current/security/impersonating_user.html
             # switch_user: true
         login:
-            pattern: ^/api/login
+            pattern: ^/api/token$
             stateless: true
             json_login:
-                check_path: /api/login
+                check_path: /api/token
                 username_path: email
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
+        token_refresh:
+            pattern: ^/api/token/refresh$
+            stateless: true
+            provider: app_user_provider
+            refresh_jwt:
+                check_path: /api/token/refresh
         api:
             pattern: ^/api
             stateless: true
             provider: app_user_provider
+            entry_point: jwt
             jwt: ~
+        # TODO: when adding logout info, see here: https://github.com/markitosgv/JWTRefreshTokenBundle#invalidate-refresh-token-on-logout
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        - { path: ^/api($|/login|/index|/docs), roles: PUBLIC_ACCESS }
+        - { path: ^/api($|/token|/index|/docs), roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
