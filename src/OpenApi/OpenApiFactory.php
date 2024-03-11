@@ -95,6 +95,22 @@ class OpenApiFactory implements OpenApiFactoryInterface
             )
         ));
 
+        $openApi->getPaths()->addPath("/api/token/invalidate", new Model\PathItem(
+            post: new Operation(
+                tags: ["Authentication"],
+                summary: "Logs out current user",
+                description: "Deletes token-related cookies",
+                responses: [
+                    200 => [
+                        "description" => "Logged out successfully"
+                    ],
+                    400 => [
+                        "description" => "Invalid input"
+                    ]
+                ]
+            )
+        ));
+
         return $openApi;
     }
 }

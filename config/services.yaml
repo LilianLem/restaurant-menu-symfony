@@ -4,6 +4,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.user_provider.property: email
 
 services:
     # default configuration for services in *this* file
@@ -27,3 +28,11 @@ services:
         decorates: 'api_platform.openapi.factory'
         arguments: [ '@App\OpenApi\OpenApiFactory.inner' ]
         autoconfigure: false
+
+    # Necessary because a class used in JwtAutorefreshTokenService isn't detected as a service
+    Gesdinet\JWTRefreshTokenBundle\Security\Http\Authentication\:
+        resource: '../vendor/gesdinet/jwt-refresh-token-bundle/Security/Http/Authentication/'
+
+    Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface $lexikAuthenticationSuccessHandler: '@Lexik\Bundle\JWTAuthenticationBundle\Security\Http\Authentication\AuthenticationSuccessHandler'
+
+    Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface $gesdinetAuthenticationSuccessHandler: '@Gesdinet\JWTRefreshTokenBundle\Security\Http\Authentication\AuthenticationSuccessHandler'

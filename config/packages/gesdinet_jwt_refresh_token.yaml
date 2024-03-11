@@ -2,3 +2,6 @@ gesdinet_jwt_refresh_token:
     refresh_token_class: App\Entity\RefreshToken
     token_parameter_name: refreshToken
     single_use: true
+    cookie:
+        enabled: true
+        remove_token_from_body: false

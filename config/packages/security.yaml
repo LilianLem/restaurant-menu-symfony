@@ -10,7 +10,7 @@ security:
         app_user_provider:
             entity:
                 class: App\Entity\User
-                property: email
+                property: '%app.user_provider.property%'
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -44,7 +44,10 @@ security:
             provider: app_user_provider
             entry_point: jwt
             jwt: ~
-        # TODO: when adding logout info, see here: https://github.com/markitosgv/JWTRefreshTokenBundle#invalidate-refresh-token-on-logout
+            logout:
+                delete_cookies:
+                    token: null
+                path: api_token_invalidate
 
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
