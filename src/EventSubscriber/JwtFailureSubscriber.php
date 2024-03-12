@@ -37,7 +37,7 @@ class JwtFailureSubscriber implements EventSubscriberInterface
     }
 
     #[Override]
-    public static function getSubscribedEvents()
+    public static function getSubscribedEvents(): array
     {
         return [
             //"lexik_jwt_authentication.on_jwt_not_found" => "onJWTFailure",
