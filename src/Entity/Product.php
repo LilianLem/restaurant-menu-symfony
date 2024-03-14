@@ -25,14 +25,25 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(
-            normalizationContext: ["groups" => ["product:read", "product:read:self", "up:product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]]
+        new GetCollection(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: allow users to get only products on sections on menus on owned restaurants
         ),
-        new Post(),
-        new Delete(),
-        new Patch(),
-        new Put()
+        new Get(
+            normalizationContext: ["groups" => ["product:read", "product:read:self", "up:product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]],
+            security: 'object.getOwner() === user or object.isPublic()'
+        ),
+        new Post(
+            security: 'is_granted("ROLE_USER")' // TODO: force creating on a section on a menu of a self-owned restaurant
+        ),
+        new Delete(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: extra security to prevent deleting by mistake (user confirmation)
+        ),
+        new Patch(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+        ),
+        new Put(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+        )
     ],
     normalizationContext: ["groups" => ["product:read", "product:read:self"]],
     denormalizationContext: ["groups" => ["product:write"]]
@@ -43,6 +54,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     "sectionProducts.section.sectionMenu.menu.menuRestaurants.restaurant" => SearchFilter::STRATEGY_EXACT,
     "sectionProducts.section.sectionMenu.menu.menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
+#[ApiFilter(BooleanFilter::class, properties: ["sectionProducts.visible"])]
 class Product
 {
     #[ORM\Id]
@@ -70,11 +82,6 @@ class Product
     #[ApiFilter(ExistsFilter::class)]
     private ?int $price = null;
 
-    #[ORM\Column(options: ["default" => true])]
-    #[Groups(["product:read", "product:write"])]
-    #[ApiFilter(BooleanFilter::class)]
-    private ?bool $visible = null;
-
     // TODO: allow excluding products by allergen
     #[ORM\ManyToMany(targetEntity: Allergen::class, inversedBy: 'products')]
     #[Groups(["product:read", "product:write"])]
@@ -89,14 +96,14 @@ class Product
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: SectionProduct::class, orphanRemoval: true, cascade: ["persist", "detach"])]
     #[Groups(["product:read:self", "up:product:read"])]
-    private Collection $sectionProducts;
+    private Collection $productSections;
 
     public function __construct()
     {
         $this->visible = true;
         $this->allergens = new ArrayCollection();
         $this->versions = new ArrayCollection();
-        $this->sectionProducts = new ArrayCollection();
+        $this->productSections = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -136,18 +143,6 @@ class Product
     public function setPrice(?int $price): static
     {
         $this->price = $price;
-
-        return $this;
-    }
-
-    public function isVisible(): ?bool
-    {
-        return $this->visible;
-    }
-
-    public function setVisible(bool $visible): static
-    {
-        $this->visible = $visible;
 
         return $this;
     }
@@ -209,30 +204,42 @@ class Product
     /**
      * @return Collection<int, SectionProduct>
      */
-    public function getSectionProducts(): Collection
+    public function getProductSections(): Collection
     {
-        return $this->sectionProducts;
+        return $this->productSections;
     }
 
-    public function addSectionProduct(SectionProduct $sectionProduct): static
+    public function addProductSection(SectionProduct $productSection): static
     {
-        if (!$this->sectionProducts->contains($sectionProduct)) {
-            $this->sectionProducts->add($sectionProduct);
-            $sectionProduct->setProduct($this);
+        if (!$this->productSections->contains($productSection)) {
+            $this->productSections->add($productSection);
+            $productSection->setProduct($this);
         }
 
         return $this;
     }
 
-    public function removeSectionProduct(SectionProduct $sectionProduct): static
+    public function removeProductSection(SectionProduct $productSection): static
     {
-        if ($this->sectionProducts->removeElement($sectionProduct)) {
+        if ($this->productSections->removeElement($productSection)) {
             // set the owning side to null (unless already changed)
-            if ($sectionProduct->getProduct() === $this) {
-                $sectionProduct->setProduct(null);
+            if ($productSection->getProduct() === $this) {
+                $productSection->setProduct(null);
             }
         }
 
         return $this;
+    }
+
+    public function isPublic(): bool
+    {
+        return $this->getProductSections()->exists(
+            fn(int $key, SectionProduct $sectionProduct) => $sectionProduct->isVisible() && $sectionProduct->getSection()->isPublic()
+        );
+    }
+
+    public function getOwner(): ?User
+    {
+        return $this->getProductSections()->first()->getSection()->getOwner();
     }
 }

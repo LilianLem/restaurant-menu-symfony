@@ -25,17 +25,26 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: MenuRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(
-            normalizationContext: ["groups" => ["menu:read", "menu:read:self", "menu:read:get", "section:read", "up:menu:read", "up:restaurant:read"]]
+        new GetCollection(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: allow users to get only menus on owned restaurants
         ),
-        new Post(),
-        new Delete(),
+        new Get(
+            normalizationContext: ["groups" => ["menu:read", "menu:read:self", "menu:read:get", "section:read", "up:menu:read", "up:restaurant:read"]],
+            security: 'object.getOwner() === user or object.isPublic()'
+        ),
+        new Post(
+            security: 'is_granted("ROLE_USER")' // TODO: force creating on a self-owned restaurant
+        ),
+        new Delete(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: extra security to prevent deleting by mistake (user confirmation)
+        ),
         new Patch(
-            denormalizationContext: ["groups" => ["menu:write", "menu:write:update"]]
+            denormalizationContext: ["groups" => ["menu:write", "menu:write:update"]],
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
         ),
         new Put(
-            denormalizationContext: ["groups" => ["menu:write", "menu:write:update"]]
+            denormalizationContext: ["groups" => ["menu:write", "menu:write:update"]],
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
         )
     ],
     normalizationContext: ["groups" => ["menu:read", "menu:read:self"]],
@@ -252,5 +261,19 @@ class Menu
         $this->inTrash = $inTrash;
 
         return $this;
+    }
+
+    public function isPublic(): bool
+    {
+        $hasPublicRestaurants = $this->getMenuRestaurants()->exists(
+            fn(int $key, RestaurantMenu $restaurantMenu) => $restaurantMenu->getRestaurant()->isPublic()
+        );
+
+        return $hasPublicRestaurants && !$this->isInTrash() && $this->isVisible();
+    }
+
+    public function getOwner(): ?User
+    {
+        return $this->getMenuRestaurants()->first()->getRestaurant()->getOwner();
     }
 }

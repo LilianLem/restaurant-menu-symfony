@@ -55,6 +55,9 @@ security:
         - { path: ^/api($|/token|/index|/docs), roles: PUBLIC_ACCESS }
         #- { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
+    role_hierarchy:
+        ROLE_SUPER_ADMIN: ROLE_ADMIN
+
 when@test:
     security:
         password_hashers:

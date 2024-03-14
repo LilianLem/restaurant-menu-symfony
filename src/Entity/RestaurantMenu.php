@@ -24,7 +24,11 @@ use Symfony\Component\Validator\Constraints as Assert;
     message: "Ce rang de menu est déjà assigné sur ce restaurant",
 )]
 #[ApiResource(
-    operations: [new Patch()],
+    operations: [
+        new Patch(
+            security: 'is_granted("ROLE_ADMIN") or object.getRestaurant().getOwner() === user' // TODO: only allow changing rank
+        )
+    ],
     denormalizationContext: ["groups" => ["restaurantMenu:write"]]
 )]
 class RestaurantMenu

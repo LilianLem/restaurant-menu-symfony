@@ -58,7 +58,7 @@ class AppFixtures extends Fixture
 
         $adminUser = new User();
         $adminUser->setEmail("admin@restaurant-menu-symfony.tk")
-            ->setRoles(["ROLE_USER", "ROLE_ADMIN"])
+            ->setRoles(["ROLE_ADMIN"])
             ->setPassword($this->passwordHasher->hashPassword($adminUser, "password"))
         ;
         $manager->persist($adminUser);
@@ -68,6 +68,7 @@ class AppFixtures extends Fixture
             $user->setEmail("user$i@restaurant-menu-symfony.tk")
                 ->setRoles(["ROLE_USER"])
                 ->setPassword($this->passwordHasher->hashPassword($user, "password"))
+                ->setVerified($this->faker->boolean(90))
             ;
 
             $manager->persist($user);
@@ -269,7 +270,6 @@ class AppFixtures extends Fixture
 
             $product = new Product();
             $product->setName($productData->name)
-                ->setVisible($this->faker->boolean(80))
                 ->setDescription($productData->description)
                 ->setPrice($productData->price)
             ;
@@ -278,7 +278,9 @@ class AppFixtures extends Fixture
                 $this->addProductAllergens($product);
             }
 
-            $this->sectionService->addProductToSection($section, $product);
+            $this->sectionService->addProductToSection($section, $product)
+                ->setVisible($this->faker->boolean(80))
+            ;
             $products[] = $product;
 
             $productNamesCache[] = $productData->name;
