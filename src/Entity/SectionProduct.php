@@ -24,7 +24,11 @@ use Symfony\Component\Validator\Constraints as Assert;
     message: "Ce rang de produit est déjà assigné sur cette section",
 )]
 #[ApiResource(
-    operations: [new Patch()],
+    operations: [
+        new Patch(
+            security: 'is_granted("ROLE_ADMIN") or object.getSection().getOwner() === user' // TODO: only allow changing rank
+        )
+    ],
     denormalizationContext: ["groups" => ["sectionProduct:write"]]
 )]
 class SectionProduct
@@ -41,11 +45,15 @@ class SectionProduct
     #[Groups(["up:product:read", "product:read:self"])]
     private ?Section $section = null;
 
-    #[ORM\ManyToOne(inversedBy: 'sectionProducts', cascade: ["persist", "detach"])]
+    #[ORM\ManyToOne(inversedBy: 'productSections', cascade: ["persist", "detach"])]
     #[ORM\JoinColumn(nullable: false)]
     //#[Assert\NotBlank]
     #[Groups(["section:read:get"])]
     private ?Product $product = null;
+
+    #[ORM\Column(options: ["default" => true])]
+    #[Groups(["up:product:read", "product:read", "sectionProduct:write", "section:read:get"])]
+    private ?bool $visible = null;
 
     #[ORM\Column(options: ["unsigned" => true])]
     #[Assert\Positive(message: "Le rang doit être positif")]
@@ -90,6 +98,18 @@ class SectionProduct
     public function setRank(int $rank): static
     {
         $this->rank = $rank;
+
+        return $this;
+    }
+
+    public function isVisible(): ?bool
+    {
+        return $this->visible;
+    }
+
+    public function setVisible(bool $visible): static
+    {
+        $this->visible = $visible;
 
         return $this;
     }

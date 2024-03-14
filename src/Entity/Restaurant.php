@@ -30,14 +30,22 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(
-            normalizationContext: ["groups" => ["restaurant:read", "restaurant:read:self", "restaurant:read:get", "menu:read", "up:restaurant:read"]]
+        new GetCollection(
+            security: 'is_granted("ROLE_ADMIN")' // TODO: allow users to get only owned restaurants
         ),
-        new Post(),
-        new Delete(),
+        new Get(
+            normalizationContext: ["groups" => ["restaurant:read", "restaurant:read:self", "restaurant:read:get", "menu:read", "up:restaurant:read"]],
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user or object.isPublic()'
+        ),
+        new Post(
+            security: 'is_granted("ROLE_USER")' // TODO: force creating a self-owned restaurant
+        ),
+        new Delete(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation)
+        ),
         new Patch(
-            denormalizationContext: ["groups" => ["restaurant:write", "restaurant:write:update"]]
+            denormalizationContext: ["groups" => ["restaurant:write", "restaurant:write:update"]],
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
         )
     ],
     normalizationContext: ["groups" => ["restaurant:read", "restaurant:read:self"]],
@@ -218,5 +226,10 @@ class Restaurant
         $this->inTrash = $inTrash;
 
         return $this;
+    }
+
+    public function isPublic(): bool
+    {
+        return $this->getOwner()->areRestaurantsPublic() && !$this->isInTrash() && $this->isVisible();
     }
 }

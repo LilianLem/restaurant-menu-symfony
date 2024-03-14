@@ -27,14 +27,20 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity("email", message: "Une erreur est survenue dans la création du compte. Si vous en avez déjà un, cliquez sur Connexion")]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(
-            normalizationContext: ["groups" => ["user:read", "user:read:get", "restaurant:read"]]
+        new GetCollection(
+            security: 'is_granted("ROLE_ADMIN")'
         ),
-        new Post(),
-        new Delete(),
+        new Get(
+            normalizationContext: ["groups" => ["user:read", "user:read:get", "restaurant:read"]],
+            security: 'is_granted("ROLE_ADMIN") or object === user'
+        ),
+        new Post(), // TODO: handle user registration
+        new Delete(
+            security: 'is_granted("ROLE_ADMIN") or object === user' // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation)
+        ),
         new Patch(
-            denormalizationContext: ["groups" => ["user:write", "user:write:update"]]
+            denormalizationContext: ["groups" => ["user:write", "user:write:update"]],
+            security: 'is_granted("ROLE_ADMIN") or object === user'
         )
     ],
     normalizationContext: ["groups" => ["user:read"]],
@@ -86,10 +92,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ApiFilter(BooleanFilter::class)]
     private ?bool $enabled = null;
 
+    #[ORM\Column(options: ["default" => false])]
+    #[Groups(["user:read", "user:write", "up:restaurant:read"])]
+    #[ApiFilter(BooleanFilter::class)]
+    private ?bool $verified = null;
+
     public function __construct()
     {
         $this->restaurants = new ArrayCollection();
         $this->enabled = true;
+        $this->verified = false;
     }
 
     public function getId(): ?int
@@ -210,5 +222,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->enabled = $enabled;
 
         return $this;
+    }
+
+    public function isVerified(): ?bool
+    {
+        return $this->verified;
+    }
+
+    public function setVerified(bool $verified): static
+    {
+        $this->verified = $verified;
+
+        return $this;
+    }
+
+    public function areRestaurantsPublic(): bool
+    {
+        return $this->isEnabled() && $this->isVerified();
     }
 }

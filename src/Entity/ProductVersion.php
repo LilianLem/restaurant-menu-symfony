@@ -24,13 +24,22 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(),
-        new Post(
-            denormalizationContext: ["groups" => ["productVersion:write", "productVersion:write:post"]]
+        new GetCollection(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: allow users to get only versions of products on sections on menus on owned restaurants
         ),
-        new Delete(),
-        new Patch()
+        new Get(
+            security: 'object.getOwner() === user or object.isPublic()'
+        ),
+        new Post(
+            denormalizationContext: ["groups" => ["productVersion:write", "productVersion:write:post"]],
+            security: 'is_granted("ROLE_USER")' // TODO: force creating a version of a product on a section on a menu of a self-owned restaurant
+        ),
+        new Delete(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+        ),
+        new Patch(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+        )
     ],
     normalizationContext: ["groups" => ["productVersion:read", "product:read"]],
     denormalizationContext: ["groups" => ["productVersion:write"]],
@@ -121,5 +130,15 @@ class ProductVersion
         $this->visible = $visible;
 
         return $this;
+    }
+
+    public function isPublic(): bool
+    {
+        return $this->getProduct()->isPublic() && $this->isVisible();
+    }
+
+    public function getOwner(): ?User
+    {
+        return $this->getProduct()->getOwner();
     }
 }

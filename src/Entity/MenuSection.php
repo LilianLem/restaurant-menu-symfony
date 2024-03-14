@@ -24,7 +24,11 @@ use Symfony\Component\Validator\Constraints as Assert;
     message: "Ce rang de section est déjà assigné sur ce menu",
 )]
 #[ApiResource(
-    operations: [new Patch()],
+    operations: [
+        new Patch(
+            security: 'is_granted("ROLE_ADMIN") or object.getMenu().getOwner() === user' // TODO: only allow changing visibility and rank
+        )
+    ],
     denormalizationContext: ["groups" => ["menuSection:write"]]
 )]
 class MenuSection

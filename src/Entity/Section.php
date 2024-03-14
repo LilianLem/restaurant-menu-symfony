@@ -23,17 +23,26 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: SectionRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(
-            normalizationContext: ["groups" => ["section:read", "section:read:self", "section:read:get", "product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]]
+        new GetCollection(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: allow users to get only sections on menus on owned restaurants
         ),
-        new Post(),
-        new Delete(),
+        new Get(
+            normalizationContext: ["groups" => ["section:read", "section:read:self", "section:read:get", "product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]],
+            security: 'object.getOwner() === user or object.isPublic()'
+        ),
+        new Post(
+            security: 'is_granted("ROLE_USER")' // TODO: force creating on a menu of a self-owned restaurant
+        ),
+        new Delete(
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: extra security to prevent deleting by mistake (user confirmation)
+        ),
         new Patch(
-            denormalizationContext: ["groups" => ["section:write", "section:write:update"]]
+            denormalizationContext: ["groups" => ["section:write", "section:write:update"]],
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
         ),
         new Put(
-            denormalizationContext: ["groups" => ["section:write", "section:write:update"]]
+            denormalizationContext: ["groups" => ["section:write", "section:write:update"]],
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
         )
     ],
     normalizationContext: ["groups" => ["section:read", "section:read:self"]],
@@ -164,5 +173,15 @@ class Section
         }
 
         return $this->getSectionProducts()->reduce(fn(int $maxRank, SectionProduct $sp): int => $sp->getRank() > $maxRank ? $sp->getRank() : $maxRank, 0);
+    }
+
+    public function isPublic(): bool
+    {
+        return $this->getSectionMenu()->getMenu()->isPublic() && $this->getSectionMenu()->isVisible();
+    }
+
+    public function getOwner(): ?User
+    {
+        return $this->getSectionMenu()->getMenu()->getOwner();
     }
 }
