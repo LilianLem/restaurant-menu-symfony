@@ -30,6 +30,7 @@
         "symfony/security-bundle": "6.4.*",
         "symfony/serializer": "6.4.*",
         "symfony/twig-bundle": "6.4.*",
+        "symfony/uid": "6.4.*",
         "symfony/ux-react": "^2.15",
         "symfony/validator": "6.4.*",
         "symfony/webpack-encore-bundle": "^2.1",

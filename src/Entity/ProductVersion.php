@@ -11,8 +11,10 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Repository\ProductVersionRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ProductVersionRepository::class)]
@@ -47,10 +49,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 class ProductVersion
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(options: ["unsigned" => true])]
+    #[ORM\GeneratedValue(strategy: "CUSTOM")]
+    #[ORM\Column(type: UlidType::NAME, unique: true)]
+    #[ORM\CustomIdGenerator(class: "doctrine.ulid_generator")]
     #[Groups(["productVersion:read"])]
-    private ?int $id = null;
+    private ?Ulid $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'versions')]
     #[ORM\JoinColumn(nullable: false)]
@@ -79,7 +82,7 @@ class ProductVersion
         $this->product = $product;
     }
 
-    public function getId(): ?int
+    public function getId(): ?Ulid
     {
         return $this->id;
     }

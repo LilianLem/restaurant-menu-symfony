@@ -11,8 +11,10 @@ use App\Repository\AllergenRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AllergenRepository::class)]
@@ -26,10 +28,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 class Allergen
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(options: ["unsigned" => true])]
+    #[ORM\GeneratedValue(strategy: "CUSTOM")]
+    #[ORM\Column(type: UlidType::NAME, unique: true)]
+    #[ORM\CustomIdGenerator(class: "doctrine.ulid_generator")]
     #[Groups(["product:read"])]
-    private ?int $id = null;
+    private ?Ulid $id = null;
 
     #[ORM\Column(length: 64, unique: true)]
     #[Assert\Length(max: 64, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
@@ -46,7 +49,7 @@ class Allergen
         $this->products = new ArrayCollection();
     }
 
-    public function getId(): ?int
+    public function getId(): ?Ulid
     {
         return $this->id;
     }

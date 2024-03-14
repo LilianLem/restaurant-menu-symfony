@@ -60,6 +60,7 @@ class AppFixtures extends Fixture
         $adminUser->setEmail("admin@restaurant-menu-symfony.tk")
             ->setRoles(["ROLE_ADMIN"])
             ->setPassword($this->passwordHasher->hashPassword($adminUser, "password"))
+            ->setVerified(true)
         ;
         $manager->persist($adminUser);
 

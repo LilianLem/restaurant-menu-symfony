@@ -19,7 +19,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MenuRepository::class)]
@@ -59,10 +61,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 class Menu
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(options: ["unsigned" => true])]
+    #[ORM\GeneratedValue(strategy: "CUSTOM")]
+    #[ORM\Column(type: UlidType::NAME, unique: true)]
+    #[ORM\CustomIdGenerator(class: "doctrine.ulid_generator")]
     #[Groups(["menu:read", "up:section:read"])]
-    private ?int $id = null;
+    private ?Ulid $id = null;
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
@@ -116,7 +119,7 @@ class Menu
         $this->inTrash = false;
     }
 
-    public function getId(): ?int
+    public function getId(): ?Ulid
     {
         return $this->id;
     }

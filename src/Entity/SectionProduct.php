@@ -6,8 +6,10 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Patch;
 use App\Repository\SectionProductRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SectionProductRepository::class)]
@@ -34,10 +36,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 class SectionProduct
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column(options: ["unsigned" => true])]
+    #[ORM\GeneratedValue(strategy: "CUSTOM")]
+    #[ORM\Column(type: UlidType::NAME, unique: true)]
+    #[ORM\CustomIdGenerator(class: "doctrine.ulid_generator")]
     #[Groups(["up:product:read", "product:read", "section:read:get"])]
-    private ?int $id = null;
+    private ?Ulid $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'sectionProducts')]
     #[ORM\JoinColumn(nullable: false)]
@@ -61,7 +64,7 @@ class SectionProduct
     #[Groups(["up:product:read", "product:read", "sectionProduct:write", "section:read:get"])]
     private ?int $rank = null;
 
-    public function getId(): ?int
+    public function getId(): ?Ulid
     {
         return $this->id;
     }
