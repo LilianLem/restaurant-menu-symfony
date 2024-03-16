@@ -13,6 +13,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use App\DataFixtures\SectionProductsFixturesData;
 use App\Repository\SectionRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -86,6 +87,9 @@ class Section
     #[ORM\OneToOne(mappedBy: 'section', cascade: ['persist', 'remove'])]
     #[Groups(["section:read:self", "section:write", "up:section:read"])]
     private ?MenuSection $sectionMenu = null;
+
+    // Used only in fixtures
+    private readonly SectionProductsFixturesData $productsFixturesData;
 
     public function __construct()
     {
@@ -186,5 +190,21 @@ class Section
     public function getOwner(): ?User
     {
         return $this->getSectionMenu()->getMenu()->getOwner();
+    }
+
+    public function getProductsFixturesData(): ?SectionProductsFixturesData
+    {
+        if(!isset($this->productsFixturesData)) {
+            return null;
+        }
+
+        return $this->productsFixturesData;
+    }
+
+    public function setProductsFixturesData(SectionProductsFixturesData $productsFixturesData): static
+    {
+        $this->productsFixturesData = $productsFixturesData;
+
+        return $this;
     }
 }

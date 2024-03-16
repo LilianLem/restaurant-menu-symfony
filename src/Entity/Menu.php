@@ -58,6 +58,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     "menuRestaurants.restaurant" => SearchFilter::STRATEGY_EXACT,
     "menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
+#[ApiFilter(BooleanFilter::class, properties: ["menuRestaurants.visible"])]
 class Menu
 {
     #[ORM\Id]
@@ -78,11 +79,6 @@ class Menu
     #[Assert\Length(max: 1000, maxMessage: "La description ne doit pas dépasser {{ limit }} caractères")]
     #[Groups(["menu:read", "menu:write", "up:section:read"])]
     private ?string $description = null;
-
-    #[ORM\Column(options: ["default" => false])]
-    #[Groups(["menu:read", "menu:write", "up:section:read"])]
-    #[ApiFilter(BooleanFilter::class)]
-    private ?bool $visible = null;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: MenuSection::class, orphanRemoval: true, cascade: ["persist", "remove"])]
     #[Groups(["menu:read", "menu:write:update"])]
@@ -113,7 +109,6 @@ class Menu
 
     public function __construct()
     {
-        $this->visible = false;
         $this->menuSections = new ArrayCollection();
         $this->menuRestaurants = new ArrayCollection();
         $this->inTrash = false;
@@ -144,18 +139,6 @@ class Menu
     public function setDescription(?string $description): static
     {
         $this->description = $description;
-
-        return $this;
-    }
-
-    public function isVisible(): ?bool
-    {
-        return $this->visible;
-    }
-
-    public function setVisible(bool $visible): static
-    {
-        $this->visible = $visible;
 
         return $this;
     }

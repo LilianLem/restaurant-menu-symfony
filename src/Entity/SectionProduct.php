@@ -64,6 +64,11 @@ class SectionProduct
     #[Groups(["up:product:read", "product:read", "sectionProduct:write", "section:read:get"])]
     private ?int $rank = null;
 
+    public function __construct()
+    {
+        $this->visible = true;
+    }
+
     public function getId(): ?Ulid
     {
         return $this->id;

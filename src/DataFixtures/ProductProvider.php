@@ -5,7 +5,7 @@ namespace App\DataFixtures;
 use Exception;
 use Faker\Provider\Base;
 
-class RestaurantProvider extends Base
+class ProductProvider extends Base
 {
     /**
      * Généré par ChatGPT
@@ -304,9 +304,9 @@ class RestaurantProvider extends Base
         return new ProductData(...$data);
     }
 
-    private function randomPrice(int $minPrice, int $maxPrice): int
+    public function randomPrice(int $minPrice, int $maxPrice): int
     {
-        return 50 * floor(mt_rand($minPrice, $maxPrice) / 50);
+        return intval(50 * floor(mt_rand($minPrice, $maxPrice) / 50));
     }
 
     private function checkPrices(int $minPrice, int $maxPrice): void

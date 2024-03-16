@@ -103,7 +103,6 @@ class Product
 
     public function __construct()
     {
-        $this->visible = true;
         $this->allergens = new ArrayCollection();
         $this->versions = new ArrayCollection();
         $this->productSections = new ArrayCollection();
