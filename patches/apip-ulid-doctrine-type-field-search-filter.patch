@@ -1,0 +1,91 @@
+diff --git a/src/Doctrine/Orm/Filter/SearchFilter.php b/src/Doctrine/Orm/Filter/SearchFilter.php
+index bdb60be33..4ad72ceeb 100644
+--- a/src/Doctrine/Orm/Filter/SearchFilter.php
++++ b/src/Doctrine/Orm/Filter/SearchFilter.php
+@@ -25,6 +25,7 @@ use ApiPlatform\Metadata\IriConverterInterface;
+ use ApiPlatform\Metadata\Operation;
+ use Doctrine\DBAL\Types\Types;
+ use Doctrine\ORM\Query\Expr\Join;
++use Doctrine\ORM\Query\Parameter;
+ use Doctrine\ORM\QueryBuilder;
+ use Doctrine\Persistence\ManagerRegistry;
+ use Psr\Log\LoggerInterface;
+@@ -196,6 +197,7 @@ final class SearchFilter extends AbstractFilter implements SearchFilterInterface
+         }
+ 
+         $metadata = $this->getNestedMetadata($resourceClass, $associations);
++        $doctrineTypeField = $this->getDoctrineFieldType($property, $resourceClass);
+ 
+         if ($metadata->hasField($field)) {
+             if ('id' === $field) {
+@@ -211,7 +213,7 @@ final class SearchFilter extends AbstractFilter implements SearchFilterInterface
+                 return;
+             }
+ 
+-            $this->addWhereByStrategy($strategy, $queryBuilder, $queryNameGenerator, $alias, $field, $values, $caseSensitive);
++            $this->addWhereByStrategy($strategy, $queryBuilder, $queryNameGenerator, $alias, $field, $values, $caseSensitive, $doctrineTypeField);
+ 
+             return;
+         }
+@@ -273,7 +275,7 @@ final class SearchFilter extends AbstractFilter implements SearchFilterInterface
+             $associationField = $associationFieldIdentifier;
+         }
+ 
+-        $this->addWhereByStrategy($strategy, $queryBuilder, $queryNameGenerator, $associationAlias, $associationField, $values, $caseSensitive);
++        $this->addWhereByStrategy($strategy, $queryBuilder, $queryNameGenerator, $associationAlias, $associationField, $values, $caseSensitive, $doctrineTypeField);
+     }
+ 
+     /**
+@@ -281,8 +283,14 @@ final class SearchFilter extends AbstractFilter implements SearchFilterInterface
+      *
+      * @throws InvalidArgumentException If strategy does not exist
+      */
+-    protected function addWhereByStrategy(string $strategy, QueryBuilder $queryBuilder, QueryNameGeneratorInterface $queryNameGenerator, string $alias, string $field, mixed $values, bool $caseSensitive): void
++    protected function addWhereByStrategy(string $strategy, QueryBuilder $queryBuilder, QueryNameGeneratorInterface $queryNameGenerator, string $alias, string $field, mixed $values, bool $caseSensitive/*, string $doctrineTypeField = null*/): void
+     {
++        // check if we have metadata
++        if (\func_num_args() <= 7 || !is_string($doctrineTypeField = func_get_arg(7))) {
++            @trigger_error(sprintf('Method %s() will have a 8th argument `$doctrineTypeField` in version API Platform 3.0.', __FUNCTION__), \E_USER_DEPRECATED);
++            $doctrineTypeField = null; // default setParameter() value
++        }
++
+         if (!\is_array($values)) {
+             $values = [$values];
+         }
+@@ -295,14 +303,24 @@ final class SearchFilter extends AbstractFilter implements SearchFilterInterface
+             if (1 === \count($values)) {
+                 $queryBuilder
+                     ->andWhere($queryBuilder->expr()->eq($wrapCase($aliasedField), $wrapCase($valueParameter)))
+-                    ->setParameter($valueParameter, $values[0]);
++                    ->setParameter($valueParameter, $values[0], $doctrineTypeField);
+ 
+                 return;
+             }
+ 
++            // get current parameters, because QueryBuilder->setParameters() erase previous parameters set
++            $parameters = $queryBuilder->getParameters();
++            $inQuery = [];
++            for ($i = 0; $i < \count($values); ++$i) {
++                $inQuery[] = $valueParameter;
++                $parameters->add(new Parameter($valueParameter, $caseSensitive ? $values[$i] : strtolower($values[$i]), $doctrineTypeField));
++                $valueParameter = ':'.$queryNameGenerator->generateParameterName($field);
++            }
++
++            // we cannot use expr()->in() here beause it considers $inQuery parameters as strings.
+             $queryBuilder
+-                ->andWhere($queryBuilder->expr()->in($wrapCase($aliasedField), $valueParameter))
+-                ->setParameter($valueParameter, $caseSensitive ? $values : array_map('strtolower', $values));
++                ->andWhere($wrapCase($aliasedField).' IN ('.implode(', ', $inQuery).')')
++                ->setParameters($parameters);
+ 
+             return;
+         }
+@@ -342,7 +360,7 @@ final class SearchFilter extends AbstractFilter implements SearchFilterInterface
+ 
+         $queryBuilder->andWhere($queryBuilder->expr()->orX(...$ors));
+         foreach ($parameters as $parameter) {
+-            $queryBuilder->setParameter($parameter[1], $parameter[0]);
++            $queryBuilder->setParameter($parameter[1], $parameter[0], $doctrineTypeField);
+         }
+     }
+ 

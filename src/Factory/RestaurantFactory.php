@@ -49,7 +49,7 @@ final class RestaurantFactory extends ModelFactory
             'description' => self::faker()->boolean() ? self::faker()->sentence(12) : null,
             'visible' => self::faker()->boolean(75),
             'logo' => self::faker()->imageUrl(250, 100, true),
-            'owner' => UserFactory::random(["roles" => ["ROLE_USER"]]),
+            'owner' => UserFactory::randomNormalUser(),
         ];
     }
 

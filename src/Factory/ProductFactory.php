@@ -6,8 +6,10 @@ use App\DataFixtures\ProductData;
 use App\DataFixtures\SectionProductsFixturesData;
 use App\Entity\Product;
 use App\Repository\ProductRepository;
+use Closure;
 use Exception;
 use JetBrains\PhpStorm\ExpectedValues;
+use Psr\Log\LoggerInterface;
 use Zenstruck\Foundry\ModelFactory;
 use Zenstruck\Foundry\Proxy;
 use Zenstruck\Foundry\RepositoryProxy;
@@ -33,10 +35,13 @@ use Zenstruck\Foundry\RepositoryProxy;
  */
 final class ProductFactory extends ModelFactory
 {
+    /** @var Closure(): ProductData $productsTypeDefaultsGenerator */
+    private static ?Closure $productsTypeDefaultsGenerator = null;
+
     /**
      * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#factories-as-services
      */
-    public function __construct()
+    public function __construct(private LoggerInterface $logger)
     {
         parent::__construct();
     }
@@ -46,6 +51,10 @@ final class ProductFactory extends ModelFactory
      */
     protected function getDefaults(): array
     {
+        if(self::$productsTypeDefaultsGenerator) {
+            return self::getProductsTypeDefaults();
+        }
+
         return [
             'name' => self::faker()->sentence(),
             'description' => self::faker()->boolean(70) ? self::faker()->sentence(15, false) : null,
@@ -53,15 +62,16 @@ final class ProductFactory extends ModelFactory
         ];
     }
 
-    private function pushProductData(ProductData $productData): static
+    private static function getProductsTypeDefaults(): array
     {
-        return $this->addState([
+        $productData = (self::$productsTypeDefaultsGenerator)();
+
+        return [
             'name' => $productData->name,
             'description' => $productData->description,
             'price' => $productData->price
-        ]);
+        ];
     }
-
 
     public function as(
         #[ExpectedValues(values: SectionProductsFixturesData::PRODUCTS_TYPES)] string $productsType,
@@ -72,87 +82,12 @@ final class ProductFactory extends ModelFactory
             throw new Exception("Ce type de produits n'existe pas !");
         }
 
-        return call_user_func([$this, ucfirst($productsType)], $unique);
-    }
+        self::$productsTypeDefaultsGenerator = $unique ?
+            fn() => self::faker()->unique()->$productsType() :
+            fn() => self::faker()->$productsType()
+        ;
 
-    public function asStarter(bool $unique = true): static
-    {
-        /** @var ProductData $productData */
-        $productData = (
-            $unique ? self::faker()->unique() : self::faker()
-        )->starter();
-
-        return $this->pushProductData($productData);
-    }
-
-    public function asDish(bool $unique = true): static
-    {
-        /** @var ProductData $productData */
-        $productData = (
-            $unique ? self::faker()->unique() : self::faker()
-        )->starter();
-
-        return $this->pushProductData($productData);
-    }
-
-    public function asSideDish(bool $unique = true): static
-    {
-        /** @var ProductData $productData */
-        $productData = (
-            $unique ? self::faker()->unique() : self::faker()
-        )->sideDish();
-
-        return $this->pushProductData($productData);
-    }
-
-    public function asDessert(bool $unique = true): static
-    {
-        /** @var ProductData $productData */
-        $productData = (
-            $unique ? self::faker()->unique() : self::faker()
-        )->dessert();
-
-        return $this->pushProductData($productData);
-    }
-
-    public function asFreshDrink(bool $unique = true): static
-    {
-        /** @var ProductData $productData */
-        $productData = (
-            $unique ? self::faker()->unique() : self::faker()
-        )->freshDrink();
-
-        return $this->pushProductData($productData);
-    }
-
-    public function asHotDrink(bool $unique = true): static
-    {
-        /** @var ProductData $productData */
-        $productData = (
-            $unique ? self::faker()->unique() : self::faker()
-        )->hotDrink();
-
-        return $this->pushProductData($productData);
-    }
-
-    public function asAlcoholicDrink(bool $unique = true): static
-    {
-        /** @var ProductData $productData */
-        $productData = (
-            $unique ? self::faker()->unique() : self::faker()
-        )->alcoholicDrink();
-
-        return $this->pushProductData($productData);
-    }
-
-    public function asAlcoholicCocktail(bool $unique = true): static
-    {
-        /** @var ProductData $productData */
-        $productData = (
-            $unique ? self::faker()->unique() : self::faker()
-        )->alcoholicCocktail();
-
-        return $this->pushProductData($productData);
+        return $this;
     }
 
     /**

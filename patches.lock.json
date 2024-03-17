@@ -1,0 +1,17 @@
+{
+    "_hash": "163869898d08b59bff7aef12821b2a67e2e142321bc95fbfd3047c7bd9a88e11",
+    "patches": {
+        "api-platform/core": [
+            {
+                "package": "api-platform/core",
+                "description": "Support for ULIDs and other specific Doctrine types",
+                "url": "./patches/apip-ulid-doctrine-type-field-search-filter.patch",
+                "sha256": "c971e6a81cb121ae38b9cdf584ab0dfc52a0d6879041cdca7360073ef9ec1e27",
+                "depth": 1,
+                "extra": {
+                    "provenance": "root"
+                }
+            }
+        ]
+    }
+}

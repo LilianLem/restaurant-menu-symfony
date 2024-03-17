@@ -8,6 +8,8 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "api-platform/core": "^3.2",
+        "beberlei/doctrineextensions": "^1.5",
+        "cweagans/composer-patches": "^2.0@beta",
         "doctrine/dbal": "^3",
         "doctrine/doctrine-bundle": "^2.10",
         "doctrine/doctrine-migrations-bundle": "^3.2",
@@ -57,7 +59,8 @@
         "allow-plugins": {
             "php-http/discovery": true,
             "symfony/flex": true,
-            "symfony/runtime": true
+            "symfony/runtime": true,
+            "cweagans/composer-patches": true
         },
         "sort-packages": true,
         "platform": {
@@ -102,6 +105,11 @@
         "symfony": {
             "allow-contrib": false,
             "require": "6.4.*"
+        },
+        "patches": {
+            "api-platform/core": {
+                "Support for ULIDs and other specific Doctrine types": "./patches/apip-ulid-doctrine-type-field-search-filter.patch"
+            }
         }
     }
 }

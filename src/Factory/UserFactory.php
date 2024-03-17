@@ -4,6 +4,7 @@ namespace App\Factory;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use Exception;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\String\ByteString;
 use Zenstruck\Foundry\ModelFactory;
@@ -49,6 +50,7 @@ final class UserFactory extends ModelFactory
         return [
             'email' => self::generateEmail(),
             'enabled' => true,
+            'password' => "replacedAtPersist",
             'plainPassword' => "password",
             'roles' => ["ROLE_USER"],
             'verified' => self::faker()->boolean(90),
@@ -93,5 +95,24 @@ final class UserFactory extends ModelFactory
     protected static function getClass(): string
     {
         return User::class;
+    }
+
+    /** @return User|Proxy<User> */
+    public static function randomNormalUser(): User|Proxy
+    {
+        $qb = self::repository()->createQueryBuilder("u");
+        $qb->where("u.roles = '[\"ROLE_USER\"]'")
+            ->orderBy("RAND()")
+            ->setMaxResults(1)
+        ;
+
+        /** @var User[]|array<Proxy<User>> $result */
+        $result = $qb->getQuery()->getResult();
+
+        if(!$result) {
+            throw new Exception("Error: no normal user found!");
+        }
+
+        return $qb->getQuery()->getResult()[0];
     }
 }
