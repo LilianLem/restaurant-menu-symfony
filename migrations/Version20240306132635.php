@@ -28,4 +28,9 @@ final class Version20240306132635 extends AbstractMigration
         // this down() migration is auto-generated, please modify it to your needs
         $this->addSql('DROP TABLE refresh_tokens');
     }
+
+    public function isTransactional(): bool
+    {
+        return false;
+    }
 }

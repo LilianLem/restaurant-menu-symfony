@@ -28,4 +28,9 @@ final class Version20240315180748 extends AbstractMigration
         // this down() migration is auto-generated, please modify it to your needs
         $this->addSql('ALTER TABLE menu ADD visible TINYINT(1) DEFAULT 0 NOT NULL');
     }
+
+    public function isTransactional(): bool
+    {
+        return false;
+    }
 }

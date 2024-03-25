@@ -34,4 +34,9 @@ final class Version20240313201535 extends AbstractMigration
         $this->addSql('ALTER TABLE section_product DROP visible');
         $this->addSql('ALTER TABLE `user` DROP verified, CHANGE roles roles JSON NOT NULL COMMENT \'(DC2Type:json)\'');
     }
+
+    public function isTransactional(): bool
+    {
+        return false;
+    }
 }

@@ -32,4 +32,9 @@ final class Version20230627174049 extends AbstractMigration
         $this->addSql('ALTER TABLE restaurant DROP in_trash');
         $this->addSql('ALTER TABLE `user` DROP enabled');
     }
+
+    public function isTransactional(): bool
+    {
+        return false;
+    }
 }

@@ -38,4 +38,9 @@ final class Version20230627170227 extends AbstractMigration
         $this->addSql('ALTER TABLE restaurant CHANGE visible visible TINYINT(1) NOT NULL');
         $this->addSql('ALTER TABLE restaurant_menu CHANGE visible visible TINYINT(1) NOT NULL');
     }
+
+    public function isTransactional(): bool
+    {
+        return false;
+    }
 }

@@ -92,4 +92,9 @@ final class Version20240314221051 extends AbstractMigration
         $this->addSql('ALTER TABLE section_product ADD CONSTRAINT FK_10DC9A2D823E37A FOREIGN KEY (section_id) REFERENCES section (id)');
         $this->addSql('ALTER TABLE section_product ADD CONSTRAINT FK_10DC9A24584665A FOREIGN KEY (product_id) REFERENCES product (id)');
     }
+
+    public function isTransactional(): bool
+    {
+        return false;
+    }
 }
