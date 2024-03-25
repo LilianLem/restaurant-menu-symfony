@@ -32,6 +32,8 @@ use Zenstruck\Foundry\RepositoryProxy;
  */
 final class UserFactory extends ModelFactory
 {
+    public const string DEFAULT_PASSWORD = "password";
+
     /**
      * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#factories-as-services
      */
@@ -51,7 +53,7 @@ final class UserFactory extends ModelFactory
             'email' => self::generateEmail(),
             'enabled' => true,
             'password' => "replacedAtPersist",
-            'plainPassword' => "password",
+            'plainPassword' => self::DEFAULT_PASSWORD,
             'roles' => ["ROLE_USER"],
             'verified' => self::faker()->boolean(90),
         ];

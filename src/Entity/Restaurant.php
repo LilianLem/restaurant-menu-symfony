@@ -43,7 +43,8 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: 'is_granted("ROLE_USER")' // TODO: force creating a self-owned restaurant
         ),
         new Delete(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation)
+            // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation, and eventually force the restaurant to be in trash prior to deletion)
+            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
         ),
         new Patch(
             denormalizationContext: ["groups" => ["restaurant:write", "restaurant:write:update"]],
@@ -97,7 +98,7 @@ class Restaurant
 
     #[ORM\ManyToOne(inversedBy: 'restaurants')]
     #[ORM\JoinColumn(nullable: false)]
-    //#[Assert\NotBlank(message: "Un propriétaire du restaurant doit être spécifié")]
+    #[Assert\NotBlank(message: "Un propriétaire du restaurant doit être spécifié")]
     #[Groups(["restaurant:read:self", "restaurant:write", "up:restaurant:read"])]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)]
     private ?User $owner = null;
