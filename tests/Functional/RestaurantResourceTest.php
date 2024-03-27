@@ -136,8 +136,7 @@ class RestaurantResourceTest extends ApiTestCase
                 "logo",
                 "visible",
                 "description",
-                "restaurantMenus",
-                "inTrash"
+                "restaurantMenus"
             ],
             "Restaurant keys are not matching when requesting as guest"
         );
@@ -202,8 +201,7 @@ class RestaurantResourceTest extends ApiTestCase
                 "logo",
                 "visible",
                 "description",
-                "restaurantMenus",
-                "inTrash"
+                "restaurantMenus"
             ],
             "Restaurant keys are not matching when requesting as normal user (not owner)"
         );

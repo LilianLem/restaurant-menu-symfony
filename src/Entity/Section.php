@@ -6,6 +6,7 @@ use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
 use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -15,6 +16,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\DataFixtures\SectionProductsFixturesData;
 use App\Repository\SectionRepository;
+use App\Security\ApiSecurityExpressionDirectory;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -31,21 +33,21 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Get(
             normalizationContext: ["groups" => ["section:read", "section:read:self", "section:read:get", "product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]],
-            security: 'object.getOwner() === user or object.isPublic()'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_PUBLIC_OBJECT
         ),
         new Post(
-            security: 'is_granted("ROLE_USER")' // TODO: force creating on a menu of a self-owned restaurant
+            security: ApiSecurityExpressionDirectory::LOGGED_USER // TODO: force creating on a menu of a self-owned restaurant
         ),
         new Delete(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: extra security to prevent deleting by mistake (user confirmation)
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER // TODO: extra security to prevent deleting by mistake (user confirmation)
         ),
         new Patch(
             denormalizationContext: ["groups" => ["section:write", "section:write:update"]],
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         ),
         new Put(
             denormalizationContext: ["groups" => ["section:write", "section:write:update"]],
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         )
     ],
     normalizationContext: ["groups" => ["section:read", "section:read:self"]],
@@ -173,6 +175,7 @@ class Section
     }
 
     #[Groups(["section:read:get"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     public function getMaxProductRank(): int
     {
         if($this->getSectionProducts()->isEmpty()) {

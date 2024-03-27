@@ -28,7 +28,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new Patch(
-            security: 'is_granted("ROLE_ADMIN") or object.getSection().getOwner() === user' // TODO: only allow changing rank
+            security: 'is_granted("ROLE_ADMIN") or object.getSection().getOwner() === user'
         )
     ],
     denormalizationContext: ["groups" => ["sectionProduct:write"]]

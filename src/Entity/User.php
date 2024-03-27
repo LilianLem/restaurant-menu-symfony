@@ -6,6 +6,7 @@ use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
 use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -13,6 +14,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
+use App\Security\ApiSecurityExpressionDirectory;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -31,15 +33,17 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(
-            security: 'is_granted("ROLE_ADMIN")'
+            security: ApiSecurityExpressionDirectory::ADMIN_ONLY
         ),
         new Get(
             normalizationContext: ["groups" => ["user:read", "user:read:get", "restaurant:read"]],
             security: 'is_granted("ROLE_ADMIN") or object === user'
         ),
-        new Post(), // TODO: handle user registration
+        new Post(
+            security: 'is_granted("ROLE_ADMIN") or user === null' // Prevents a new registration when already connected (except when admin)
+        ), // TODO: handle user registration
         new Delete(
-            security: 'is_granted("ROLE_ADMIN") or object === user' // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation)
+            security: 'is_granted("ROLE_ADMIN") and object !== user' // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation)
         ),
         new Patch(
             denormalizationContext: ["groups" => ["user:write", "user:write:update"]],
@@ -70,6 +74,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     #[Groups(["user:read", "user:write"])]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)] // TODO: check if working as expected (find one role at a time)
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_ONLY)]
     private array $roles = [];
 
     // TODO: check if validators are checked correctly, and if NotBlank validator is not blocking everything
@@ -78,6 +83,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Length(min: 12, max: 128, minMessage: "Ce mot de passe est trop court, il doit compter au moins {{ limit }} caractères", maxMessage: "Ce mot de passe est trop long, il ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Un mot de passe est obligatoire", groups: ["auth"])]
     #[Groups(["user:write"])]
+    #[ApiProperty(security: 'object === user or object === null')]
     protected ?string $plainPassword = null;
 
     /**
@@ -94,11 +100,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(options: ["default" => true])]
     #[Groups(["user:read", "user:write", "up:restaurant:read"])]
     #[ApiFilter(BooleanFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_ONLY)]
     private ?bool $enabled = null;
 
     #[ORM\Column(options: ["default" => false])]
     #[Groups(["user:read", "user:write", "up:restaurant:read"])]
     #[ApiFilter(BooleanFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_ONLY)]
     private ?bool $verified = null;
 
     public function __construct()

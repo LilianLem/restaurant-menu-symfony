@@ -8,8 +8,8 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
 use App\Repository\ProductVersionRepository;
+use App\Security\ApiSecurityExpressionDirectory;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -30,17 +30,17 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: allow users to get only versions of products on sections on menus on owned restaurants
         ),
         new Get(
-            security: 'object.getOwner() === user or object.isPublic()'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_PUBLIC_OBJECT
         ),
         new Post(
             denormalizationContext: ["groups" => ["productVersion:write", "productVersion:write:post"]],
-            security: 'is_granted("ROLE_USER")' // TODO: force creating a version of a product on a section on a menu of a self-owned restaurant
+            security: ApiSecurityExpressionDirectory::LOGGED_USER // TODO: force creating a version of a product on a section on a menu of a self-owned restaurant
         ),
         new Delete(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         ),
         new Patch(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         )
     ],
     normalizationContext: ["groups" => ["productVersion:read", "product:read"]],
@@ -59,7 +59,7 @@ class ProductVersion
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(["productVersion:read", "productVersion:write:post"])]
     #[Assert\NotBlank(message: "La variante de produit doit être liée à un produit")]
-    private readonly ?Product $product;
+    private ?Product $product;
 
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
@@ -92,12 +92,12 @@ class ProductVersion
         return $this->product;
     }
 
-    /*public function setProduct(?Product $product): static
+    public function setProduct(?Product $product): static
     {
         $this->product = $product;
 
         return $this;
-    }*/
+    }
 
     public function getName(): ?string
     {

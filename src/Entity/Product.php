@@ -15,6 +15,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use App\Repository\ProductRepository;
+use App\Security\ApiSecurityExpressionDirectory;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -32,19 +33,19 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Get(
             normalizationContext: ["groups" => ["product:read", "product:read:self", "up:product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]],
-            security: 'object.getOwner() === user or object.isPublic()'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_PUBLIC_OBJECT
         ),
         new Post(
-            security: 'is_granted("ROLE_USER")' // TODO: force creating on a section on a menu of a self-owned restaurant
+            security: ApiSecurityExpressionDirectory::LOGGED_USER // TODO: force creating on a section on a menu of a self-owned restaurant
         ),
         new Delete(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: extra security to prevent deleting by mistake (user confirmation)
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER // TODO: extra security to prevent deleting by mistake (user confirmation)
         ),
         new Patch(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         ),
         new Put(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         )
     ],
     normalizationContext: ["groups" => ["product:read", "product:read:self"]],

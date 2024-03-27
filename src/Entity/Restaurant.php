@@ -6,6 +6,7 @@ use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
 use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -13,6 +14,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\RestaurantRepository;
+use App\Security\ApiSecurityExpressionDirectory;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -33,22 +35,23 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(
-            security: 'is_granted("ROLE_ADMIN")' // TODO: allow users to get only owned restaurants
+            security: ApiSecurityExpressionDirectory::ADMIN_ONLY // TODO: allow users to get only owned restaurants
         ),
         new Get(
             normalizationContext: ["groups" => ["restaurant:read", "restaurant:read:self", "restaurant:read:get", "menu:read", "up:restaurant:read"]],
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user or object.isPublic()'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_PUBLIC_OBJECT
         ),
         new Post(
-            security: 'is_granted("ROLE_USER")' // TODO: force creating a self-owned restaurant
+            security: ApiSecurityExpressionDirectory::LOGGED_USER // TODO: force creating a self-owned restaurant
         ),
         new Delete(
             // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation, and eventually force the restaurant to be in trash prior to deletion)
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         ),
         new Patch(
             denormalizationContext: ["groups" => ["restaurant:write", "restaurant:write:update"]],
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user'
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER,
+            securityPostDenormalize: 'object.getOwner() === previous_object.getOwner()' // TODO: move to validation later
         )
     ],
     normalizationContext: ["groups" => ["restaurant:read", "restaurant:read:self"]],
@@ -101,11 +104,13 @@ class Restaurant
     #[Assert\NotBlank(message: "Un propriétaire du restaurant doit être spécifié")]
     #[Groups(["restaurant:read:self", "restaurant:write", "up:restaurant:read"])]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private ?User $owner = null;
 
     #[ORM\Column(options: ["default" => false])]
     #[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])]
     #[ApiFilter(BooleanFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private ?bool $inTrash = null;
 
     public function __construct()
@@ -211,6 +216,7 @@ class Restaurant
     }
 
     #[Groups(["restaurant:read:get"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     public function getMaxMenuRank(): int
     {
         if($this->getRestaurantMenus()->isEmpty()) {

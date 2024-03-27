@@ -2,9 +2,11 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Patch;
 use App\Repository\RestaurantMenuRepository;
+use App\Security\ApiSecurityExpressionDirectory;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -28,7 +30,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new Patch(
-            security: 'is_granted("ROLE_ADMIN") or object.getRestaurant().getOwner() === user' // TODO: only allow changing rank
+            security: 'is_granted("ROLE_ADMIN") or object.getRestaurant().getOwner() === user'
         )
     ],
     denormalizationContext: ["groups" => ["restaurantMenu:write"]]
