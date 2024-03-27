@@ -77,9 +77,9 @@ final class UserFactory extends ModelFactory
         ]);
     }
 
-    protected static function generateEmail(string $prefix = "user"): string
+    public static function generateEmail(string $prefix = "user"): string
     {
-        return $prefix."-".self::faker()->unixTime()."-".ByteString::fromRandom(8)->toString()."@rmsymfdev.tk";
+        return $prefix."-".time()."-".ByteString::fromRandom(8)->toString()."@rmsymfdev.tk";
     }
 
     /**

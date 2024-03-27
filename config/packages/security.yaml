@@ -27,6 +27,7 @@ security:
         login:
             pattern: ^/api/token$
             stateless: true
+            user_checker: App\Security\UserChecker
             json_login:
                 check_path: /api/token
                 username_path: email
@@ -41,6 +42,7 @@ security:
         api:
             pattern: ^/api
             stateless: true
+            user_checker: App\Security\UserChecker
             provider: app_user_provider
             entry_point: jwt
             jwt: ~

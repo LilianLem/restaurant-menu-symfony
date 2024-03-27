@@ -14,13 +14,14 @@ use Zenstruck\Foundry\Proxy;
 abstract class ApiTestCase extends KernelTestCase
 {
     use HasBrowser {
-        browser as baseKernelBrowser;
+        browser as appBrowser;
     }
 
     /** @param User|Proxy<User> $actingAs */
-    protected function browser(array $options = [], array $server = [], User|Proxy|null $actingAs = null): KernelBrowser
+    protected function browser(array $options = [], array $server = [], User|Proxy|null $actingAs = null): AppBrowser
     {
-        $browser = $this->baseKernelBrowser($options, $server)
+        /** @var AppBrowser $browser */
+        $browser = $this->appBrowser($options, $server)
             ->setDefaultHttpOptions(
                 HttpOptions::create()
                     ->withHeader("Accept", "application/ld+json")

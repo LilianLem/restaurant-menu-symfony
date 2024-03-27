@@ -24,6 +24,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -84,6 +85,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotBlank(message: "Un mot de passe est obligatoire", groups: ["auth"])]
     #[Groups(["user:write"])]
     #[ApiProperty(security: 'object === user or object === null')]
+    #[SerializedName("password")]
     protected ?string $plainPassword = null;
 
     /**
@@ -162,6 +164,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
+    public function isPlainPasswordFilled(): bool
+    {
+        return !is_null($this->plainPassword);
+    }
+
     // TODO: need a confirmation this is the right way of doing things with API before using that
     public function setPlainPassword(string $plainPassword): static
     {
@@ -170,7 +177,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // Used in fixtures to keep plainPassword private
+    // Password is hashed directly into this entity method to keep plainPassword private
     public function hashPassword(UserPasswordHasherInterface $passwordHasher): static
     {
         $hashedPassword = $passwordHasher->hashPassword($this, $this->plainPassword);
