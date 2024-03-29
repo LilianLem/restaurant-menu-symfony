@@ -13,15 +13,18 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
 use App\DataFixtures\SectionProductsFixturesData;
 use App\Repository\SectionRepository;
 use App\Security\ApiSecurityExpressionDirectory;
+use App\State\SectionStateProcessor;
+use App\Validator as AppAssert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Exception;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -36,16 +39,14 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_PUBLIC_OBJECT
         ),
         new Post(
-            security: ApiSecurityExpressionDirectory::LOGGED_USER // TODO: force creating on a menu of a self-owned restaurant
+            denormalizationContext: ["groups" => ["section:write", "section:write:post"]],
+            security: ApiSecurityExpressionDirectory::LOGGED_USER,
+            processor: SectionStateProcessor::class
         ),
         new Delete(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER // TODO: extra security to prevent deleting by mistake (user confirmation)
         ),
         new Patch(
-            denormalizationContext: ["groups" => ["section:write", "section:write:update"]],
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
-        ),
-        new Put(
             denormalizationContext: ["groups" => ["section:write", "section:write:update"]],
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         )
@@ -59,7 +60,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     "sectionMenu.menu.menuRestaurants.restaurant" => SearchFilter::STRATEGY_EXACT,
     "sectionMenu.menu.menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
-class Section
+class Section implements OwnedEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -76,19 +77,27 @@ class Section
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
+    #[Assert\LessThanOrEqual(100000000, message: "Le prix ne peut pas être aussi élevé")]
     #[Groups(["section:read", "section:write", "up:product:read"])]
     #[ApiFilter(RangeFilter::class)]
     #[ApiFilter(ExistsFilter::class)]
     private ?int $price = null;
 
     #[ORM\OneToMany(mappedBy: 'section', targetEntity: SectionProduct::class, orphanRemoval: true, cascade: ["persist"])]
-    #[Groups(["section:read", "section:write:update"])]
+    #[Groups(["section:read"])]
     #[ApiFilter(ExistsFilter::class)]
     private Collection $sectionProducts;
 
     #[ORM\OneToOne(mappedBy: 'section', cascade: ['persist', 'remove'])]
-    #[Groups(["section:read:self", "section:write", "up:section:read"])]
+    #[Groups(["section:read:self", "up:section:read"])]
     private ?MenuSection $sectionMenu = null;
+
+    #[Groups(["section:write:post"])]
+    #[Assert\NotBlank(message: "Un menu doit être renseigné pour créer une section")]
+    #[AppAssert\IsSelfOwned(options: ["message" => "Ce menu ne vous appartient pas"])]
+    #[SerializedName("menu")]
+    /** Only used for API POST operations in related StateProcessor */
+    private ?Menu $menuForInit = null;
 
     // Used only in fixtures
     private readonly SectionProductsFixturesData $productsFixturesData;
@@ -206,7 +215,23 @@ class Section
 
     public function setProductsFixturesData(SectionProductsFixturesData $productsFixturesData): static
     {
+        if(isset($this->productsFixturesData)) {
+            throw new Exception("productsFixturesData is already set in this section!");
+        }
+
         $this->productsFixturesData = $productsFixturesData;
+
+        return $this;
+    }
+
+    public function getMenuForInit(): ?Menu
+    {
+        return $this->menuForInit;
+    }
+
+    public function setMenuForInit(Menu $menuForInit): static
+    {
+        $this->menuForInit = $menuForInit;
 
         return $this;
     }

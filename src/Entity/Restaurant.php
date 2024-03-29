@@ -15,6 +15,8 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\RestaurantRepository;
 use App\Security\ApiSecurityExpressionDirectory;
+use App\State\RestaurantStateProcessor;
+use App\Validator as AppAssert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -32,6 +34,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     errorPath: "name",
     message: "Vous possédez déjà un restaurant avec ce nom",
 )]
+#[AppAssert\IsRestaurantNameUnique(groups: ["postValidation"])]
 #[ApiResource(
     operations: [
         new GetCollection(
@@ -42,7 +45,9 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_PUBLIC_OBJECT
         ),
         new Post(
-            security: ApiSecurityExpressionDirectory::LOGGED_USER // TODO: force creating a self-owned restaurant
+            security: ApiSecurityExpressionDirectory::LOGGED_USER,
+            validationContext: ["groups" => ["Default", "postValidation"]],
+            processor: RestaurantStateProcessor::class
         ),
         new Delete(
             // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation, and eventually force the restaurant to be in trash prior to deletion)
@@ -50,8 +55,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Patch(
             denormalizationContext: ["groups" => ["restaurant:write", "restaurant:write:update"]],
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER,
-            securityPostDenormalize: 'object.getOwner() === previous_object.getOwner()' // TODO: move to validation later
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         )
     ],
     normalizationContext: ["groups" => ["restaurant:read", "restaurant:read:self"]],
@@ -62,7 +66,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     "restaurantMenus.menu.menuSections.section" => SearchFilter::STRATEGY_EXACT,
     "restaurantMenus.menu.menuSections.section.sectionProducts.product" => SearchFilter::STRATEGY_EXACT
 ])]
-class Restaurant
+class Restaurant implements OwnedEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -87,6 +91,7 @@ class Restaurant
     #[ORM\Column(options: ["default" => false])]
     #[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])]
     #[ApiFilter(BooleanFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private ?bool $visible = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -95,16 +100,16 @@ class Restaurant
     private ?string $description = null;
 
     #[ORM\OneToMany(mappedBy: 'restaurant', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist", "remove"])]
-    #[Groups(["restaurant:read", "restaurant:write:update"])]
+    #[Groups(["restaurant:read"])]
     #[ApiFilter(ExistsFilter::class)]
     private Collection $restaurantMenus;
 
     #[ORM\ManyToOne(inversedBy: 'restaurants')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Assert\NotBlank(message: "Un propriétaire du restaurant doit être spécifié")]
     #[Groups(["restaurant:read:self", "restaurant:write", "up:restaurant:read"])]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)]
-    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_ONLY)]
+    /** Automatically defined in RestaurantStateProcessor */
     private ?User $owner = null;
 
     #[ORM\Column(options: ["default" => false])]

@@ -4,10 +4,12 @@ namespace App\Entity;
 
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use App\Repository\AllergenRepository;
+use App\Security\ApiSecurityExpressionDirectory;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -42,6 +44,7 @@ class Allergen
 
     #[ORM\ManyToMany(targetEntity: Product::class, mappedBy: 'allergens')]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_ONLY)]
     private Collection $products;
 
     public function __construct()

@@ -14,15 +14,17 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
 use App\Repository\MenuRepository;
 use App\Security\ApiSecurityExpressionDirectory;
+use App\State\MenuStateProcessor;
+use App\Validator as AppAssert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -37,16 +39,14 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_PUBLIC_OBJECT
         ),
         new Post(
-            security: ApiSecurityExpressionDirectory::LOGGED_USER // TODO: force creating on a self-owned restaurant
+            denormalizationContext: ["groups" => ["menu:write", "menu:write:post"]],
+            security: ApiSecurityExpressionDirectory::LOGGED_USER,
+            processor: MenuStateProcessor::class
         ),
         new Delete(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER // TODO: extra security to prevent deleting by mistake (user confirmation)
         ),
         new Patch(
-            denormalizationContext: ["groups" => ["menu:write", "menu:write:update"]],
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
-        ),
-        new Put(
             denormalizationContext: ["groups" => ["menu:write", "menu:write:update"]],
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         )
@@ -61,7 +61,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     "menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
 #[ApiFilter(BooleanFilter::class, properties: ["menuRestaurants.visible"])]
-class Menu
+class Menu implements OwnedEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -83,12 +83,12 @@ class Menu
     private ?string $description = null;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: MenuSection::class, orphanRemoval: true, cascade: ["persist", "remove"])]
-    #[Groups(["menu:read", "menu:write:update"])]
+    #[Groups(["menu:read"])]
     #[ApiFilter(ExistsFilter::class)]
     private Collection $menuSections;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist"])]
-    #[Groups(["menu:read:self", "menu:write", "up:menu:read"])]
+    #[Groups(["menu:read:self", "up:menu:read"])]
     private Collection $menuRestaurants;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -99,16 +99,24 @@ class Menu
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
+    #[Assert\LessThanOrEqual(100000000, message: "Le prix ne peut pas être aussi élevé")]
     #[Groups(["menu:read", "menu:write", "up:section:read"])]
     #[ApiFilter(RangeFilter::class)]
     #[ApiFilter(ExistsFilter::class)]
     private ?int $price = null;
 
     #[ORM\Column(options: ["default" => false])]
-    #[Groups(["menu:read", "menu:write", "up:section:read"])]
+    #[Groups(["menu:read", "menu:write:update", "up:section:read"])]
     #[ApiFilter(BooleanFilter::class)]
     #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private ?bool $inTrash = null;
+
+    #[Groups(["menu:write:post"])]
+    #[Assert\NotBlank(message: "Un restaurant doit être renseigné pour créer un menu")]
+    #[AppAssert\IsSelfOwned(options: ["message" => "Ce restaurant ne vous appartient pas"])]
+    #[SerializedName("firstRestaurant")]
+    /** Only used for API POST operations in related StateProcessor */
+    private ?Restaurant $restaurantForInit = null;
 
     public function __construct()
     {
@@ -254,15 +262,29 @@ class Menu
 
     public function isPublic(): bool
     {
-        $hasPublicRestaurants = $this->getMenuRestaurants()->exists(
-            fn(int $key, RestaurantMenu $restaurantMenu) => $restaurantMenu->getRestaurant()->isPublic()
-        );
+        if($this->isInTrash()) {
+            return false;
+        }
 
-        return $hasPublicRestaurants && !$this->isInTrash() && $this->isVisible();
+        return $this->getMenuRestaurants()->exists(
+            fn(int $key, RestaurantMenu $restaurantMenu) => $restaurantMenu->isVisible() && $restaurantMenu->getRestaurant()->isPublic()
+        );
     }
 
     public function getOwner(): ?User
     {
         return $this->getMenuRestaurants()->first()->getRestaurant()->getOwner();
+    }
+
+    public function getRestaurantForInit(): ?Restaurant
+    {
+        return $this->restaurantForInit;
+    }
+
+    public function setRestaurantForInit(Restaurant $restaurantForInit): static
+    {
+        $this->restaurantForInit = $restaurantForInit;
+
+        return $this;
     }
 }

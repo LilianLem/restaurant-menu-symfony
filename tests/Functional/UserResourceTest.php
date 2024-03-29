@@ -286,18 +286,30 @@ class UserResourceTest extends ApiTestCase
         $password = UserFactory::faker()->password(12, 128);
 
         $browser = $this->browser(actingAs: $admin);
-        $userData = $browser->post("/api/users", [
+
+        // Check that "classic" admins can't create another admin user
+        $browser->post("/api/users", [
                 "json" => [
                     "email" => $email,
                     "password" => $password,
                     "roles" => ["ROLE_ADMIN"],
+                ]
+            ])
+            ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
+            ->assertJsonMatches('detail', "roles: Vous n'êtes pas autorisé à attribuer au moins l'un des rôles sélectionnés")
+        ;
+
+        $userData = $browser->post("/api/users", [
+                "json" => [
+                    "email" => $email,
+                    "password" => $password,
                     "enabled" => false,
                     "verified" => true
                 ]
             ])
             ->assertStatus(Response::HTTP_CREATED)
             ->assertJsonMatches('email', $email)
-            ->assertJsonMatches('roles', ["ROLE_USER"]) // TODO: prevent "classic" admin from creating another user as admin
+            ->assertJsonMatches('roles', ["ROLE_USER"])
             ->assertJsonMatches('enabled', false)
             ->assertJsonMatches('verified', true)
             ->json()->decoded()

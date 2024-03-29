@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Patch;
 use App\Repository\MenuSectionRepository;
@@ -28,7 +29,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new Patch(
-            security: 'is_granted("ROLE_ADMIN") or object.getMenu().getOwner() === user'
+            security: self::ADMIN_OR_OWNER_SECURITY_EXPR
         )
     ],
     denormalizationContext: ["groups" => ["menuSection:write"]]
@@ -56,6 +57,7 @@ class MenuSection
 
     #[ORM\Column(options: ["default" => false])]
     #[Groups(["up:section:read", "section:read", "menuSection:write", "menu:read:get"])]
+    #[ApiProperty(security: self::PROPERTIES_ADMIN_OR_OWNER_SECURITY_EXPR)]
     private ?bool $visible = null;
 
     #[ORM\Column(options: ["unsigned" => true])]
@@ -63,6 +65,9 @@ class MenuSection
     #[Assert\NotBlank]
     #[Groups(["up:section:read", "section:read", "menuSection:write", "menu:read:get"])]
     private ?int $rank = null;
+
+    private const string ADMIN_OR_OWNER_SECURITY_EXPR = 'is_granted("ROLE_ADMIN") or object.getMenu().getOwner() === user';
+    private const string PROPERTIES_ADMIN_OR_OWNER_SECURITY_EXPR = self::ADMIN_OR_OWNER_SECURITY_EXPR . " or object === null";
 
     public function __construct()
     {

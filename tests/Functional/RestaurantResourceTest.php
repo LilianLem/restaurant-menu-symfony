@@ -2,9 +2,11 @@
 
 namespace App\Tests\Functional;
 
+use App\Entity\Restaurant;
 use App\Factory\RestaurantFactory;
 use App\Factory\UserFactory;
 use Symfony\Component\HttpFoundation\Response;
+use Zenstruck\Foundry\Proxy;
 use Zenstruck\Foundry\Test\ResetDatabase;
 
 class RestaurantResourceTest extends ApiTestCase
@@ -15,7 +17,10 @@ class RestaurantResourceTest extends ApiTestCase
     {
         RestaurantFactory::createMany(8, ["owner" => UserFactory::createOne()]);
         $user = UserFactory::createOne();
-        RestaurantFactory::createMany(2, ["owner" => $user]);
+        $ownedRestaurants = RestaurantFactory::createMany(2, ["owner" => $user]);
+
+        /** @var Restaurant|Proxy<Restaurant> $restaurant */
+        $ownedRestaurantIds = array_map(fn(Restaurant|Proxy $restaurant) => $restaurant->getId()->jsonSerialize(), $ownedRestaurants);
 
         $admin = UserFactory::new()->asAdmin()->create();
 
@@ -49,17 +54,14 @@ class RestaurantResourceTest extends ApiTestCase
                 "visible",
                 "description",
                 "restaurantMenus",
-                "owner",
                 "inTrash"
             ],
             "Restaurant keys are not matching when connected as normal user"
         );
 
-        $this->assertSame(
-            array_count_values(array_map(fn(array $restaurant) => $restaurant["owner"], $restaurants)),
-            ["/api/users/".$user->getId() => 2],
-            "Some restaurants retrieved when connected as normal user are not self-owned"
-        );
+        foreach($restaurants as $restaurant) {
+            $this->assertContains($restaurant["id"], $ownedRestaurantIds, "At least one restaurant retrieved when connected as normal user is not self-owned");
+        }
 
         // As admin
 
@@ -134,7 +136,6 @@ class RestaurantResourceTest extends ApiTestCase
                 "id",
                 "name",
                 "logo",
-                "visible",
                 "description",
                 "restaurantMenus"
             ],
@@ -168,7 +169,6 @@ class RestaurantResourceTest extends ApiTestCase
                 "visible",
                 "description",
                 "restaurantMenus",
-                "owner",
                 "inTrash",
                 "maxMenuRank"
             ],
@@ -199,7 +199,6 @@ class RestaurantResourceTest extends ApiTestCase
                 "id",
                 "name",
                 "logo",
-                "visible",
                 "description",
                 "restaurantMenus"
             ],
@@ -259,6 +258,7 @@ class RestaurantResourceTest extends ApiTestCase
 
         $user = UserFactory::createOne();
         $user2 = UserFactory::createOne();
+        $admin = UserFactory::new()->asAdmin()->create();
 
         $browser = $this->browser(actingAs: $user)
             ->post("/api/restaurants", [
@@ -267,21 +267,18 @@ class RestaurantResourceTest extends ApiTestCase
             ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ;
 
-        // TODO: make it so the owner is automatically defined when posting if the user is not an admin
-
-        $json = $browser->post("/api/restaurants", [
+        $restaurant = $browser->post("/api/restaurants", [
                 "json" => [
                     "name" => "My new restaurant"
                 ]
             ])
             ->assertJson()
             ->assertStatus(Response::HTTP_CREATED)
-            ->assertJsonMatches('owner', "/api/users/".$user->getId())
             ->json()->decoded()
         ;
 
         $this->assertSame(
-            array_keys($json),
+            array_keys($restaurant),
             [
                 "@context",
                 "@id",
@@ -292,13 +289,20 @@ class RestaurantResourceTest extends ApiTestCase
                 "visible",
                 "description",
                 "restaurantMenus",
-                "owner",
                 "inTrash"
             ],
             "Restaurant keys are not matching when posting as normal user"
         );
 
-        $browser->post("/api/restaurants", [
+        $this->browser(actingAs: $admin)
+            ->get($restaurant["@id"])
+            ->assertJson()
+            ->assertStatus(Response::HTTP_OK)
+            ->assertJsonMatches('owner."@id"', "/api/users/".$user->getId())
+        ;
+
+        $this->browser(actingAs: $user)
+            ->post("/api/restaurants", [
                 "json" => [
                     "name" => "My new restaurant"
                 ]
@@ -308,8 +312,8 @@ class RestaurantResourceTest extends ApiTestCase
             ->assertJsonMatches('detail', "name: Vous possédez déjà un restaurant avec ce nom")
         ;
 
-        // TODO: make it so the owner is always the connected user even if field value is something else, if the user is not an admin
-        $browser->post("/api/restaurants", [
+        // Check if owner field is ignored (it should only be processed if user is admin)
+        $restaurant = $browser->post("/api/restaurants", [
                 "json" => [
                     "name" => "My shiny restaurant",
                     "owner" => "/api/users/".$user2->getId()
@@ -317,20 +321,24 @@ class RestaurantResourceTest extends ApiTestCase
             ])
             ->assertJson()
             ->assertStatus(Response::HTTP_CREATED)
-            ->assertJsonMatches('owner', "/api/users/".$user->getId())
+            ->json()->decoded()
+        ;
+        $browser = $this->browser(actingAs: $admin)
+            ->get($restaurant["@id"])
+            ->assertJson()
+            ->assertStatus(Response::HTTP_OK)
+            ->assertJsonMatches('owner."@id"', "/api/users/".$user->getId())
         ;
 
         // As admin, on behalf of normal user
 
-        $admin = UserFactory::new()->asAdmin()->create();
-        $browser = $this->browser(actingAs: $admin)
-            ->post("/api/restaurants", [
+        $browser->post("/api/restaurants", [
                 "json" => []
             ])
             ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ;
 
-        $json = $browser->post("/api/restaurants", [
+        $restaurant = $browser->post("/api/restaurants", [
                 "json" => [
                     "name" => "My new restaurant 2",
                     "owner" => "/api/users/".$user->getId()
@@ -343,7 +351,7 @@ class RestaurantResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($json),
+            array_keys($restaurant),
             [
                 "@context",
                 "@id",
@@ -383,7 +391,6 @@ class RestaurantResourceTest extends ApiTestCase
             ->assertStatus(Response::HTTP_FORBIDDEN)
 
             ->delete("/api/restaurants/".$restaurant->getId())
-            ->dump()
             ->assertStatus(Response::HTTP_NO_CONTENT)
 
             ->delete("/api/restaurants/".$restaurant->getId())

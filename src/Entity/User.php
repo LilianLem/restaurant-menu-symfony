@@ -15,6 +15,8 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
 use App\Security\ApiSecurityExpressionDirectory;
+use App\State\UserHashPasswordProcessor;
+use App\Validator as AppAssert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -41,14 +43,18 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: 'is_granted("ROLE_ADMIN") or object === user'
         ),
         new Post(
-            security: 'is_granted("ROLE_ADMIN") or user === null' // Prevents a new registration when already connected (except when admin)
+            denormalizationContext: ["groups" => ["user:write", "user:write:post"]],
+            security: 'is_granted("ROLE_ADMIN") or not(is_granted("ROLE_USER"))', // Prevents a new registration when already connected (except when admin)
+            validationContext: ["groups" => ["Default", "postValidation"]],
+            processor: UserHashPasswordProcessor::class
         ), // TODO: handle user registration
         new Delete(
             security: 'is_granted("ROLE_ADMIN") and object !== user' // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation)
         ),
         new Patch(
             denormalizationContext: ["groups" => ["user:write", "user:write:update"]],
-            security: 'is_granted("ROLE_ADMIN") or object === user'
+            security: 'is_granted("ROLE_ADMIN") or object === user',
+            processor: UserHashPasswordProcessor::class
         )
     ],
     normalizationContext: ["groups" => ["user:read"]],
@@ -67,22 +73,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Length(max: 180, maxMessage: "L'adresse e-mail ne peut pas dépasser {{ limit }} caractères")]
     #[Assert\Email(message: "L'adresse e-mail renseignée n'est pas valide")]
     #[Assert\NotBlank(message: "L'adresse e-mail est obligatoire")]
-    #[Groups(["user:read", "user:write", "up:restaurant:read"])]
+    #[Groups(["user:read", "user:write:post", "up:restaurant:read"])]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_START)]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_PARTIAL)]
+    // TODO: specify on settings page that email can only be changed through Contact Us form (maybe create later a specific process for user to do it by himself, with email confirmation)
     private ?string $email = null;
 
     #[ORM\Column]
     #[Groups(["user:read", "user:write"])]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)] // TODO: check if working as expected (find one role at a time)
-    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_ONLY)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_ONLY)] // TODO: prevent "classic" admin from adding ROLE_ADMIN to another user
+    #[AppAssert\AreRolesAllowed]
     private array $roles = [];
 
-    // TODO: check if validators are checked correctly, and if NotBlank validator is not blocking everything
+    // TODO: add a reset password process (can be triggered anonymously if email is provided, or by admin)
     #[Assert\PasswordStrength(["message" => "Ce mot de passe est trop vulnérable. Veuillez choisir un mot de passe plus sécurisé."])]
     #[Assert\NotCompromisedPassword(message: "Ce mot de passe est présent dans une fuite de données connue. Veuillez en choisir un autre.", skipOnError: true)]
     #[Assert\Length(min: 12, max: 128, minMessage: "Ce mot de passe est trop court, il doit compter au moins {{ limit }} caractères", maxMessage: "Ce mot de passe est trop long, il ne doit pas dépasser {{ limit }} caractères")]
-    #[Assert\NotBlank(message: "Un mot de passe est obligatoire", groups: ["auth"])]
+    #[Assert\NotBlank(message: "Un mot de passe est obligatoire", groups: ["postValidation"])]
     #[Groups(["user:write"])]
     #[ApiProperty(security: 'object === user or object === null')]
     #[SerializedName("password")]
@@ -96,7 +104,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: Restaurant::class, orphanRemoval: true, cascade: ["persist"])]
     #[ApiFilter(ExistsFilter::class)]
-    #[Groups(["user:read", "user:write:update"])]
+    #[Groups(["user:read"])]
     private Collection $restaurants;
 
     #[ORM\Column(options: ["default" => true])]

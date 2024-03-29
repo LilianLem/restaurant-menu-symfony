@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -10,6 +11,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\ProductVersionRepository;
 use App\Security\ApiSecurityExpressionDirectory;
+use App\Validator as AppAssert;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -22,7 +24,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[UniqueEntity(
     fields: ["product", "name"],
     errorPath: "name",
-    message: "Cette version existe déjà",
+    message: "Une version avec ce nom existe déjà",
 )]
 #[ApiResource(
     operations: [
@@ -34,7 +36,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Post(
             denormalizationContext: ["groups" => ["productVersion:write", "productVersion:write:post"]],
-            security: ApiSecurityExpressionDirectory::LOGGED_USER // TODO: force creating a version of a product on a section on a menu of a self-owned restaurant
+            security: ApiSecurityExpressionDirectory::LOGGED_USER
         ),
         new Delete(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
@@ -46,7 +48,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     normalizationContext: ["groups" => ["productVersion:read", "product:read"]],
     denormalizationContext: ["groups" => ["productVersion:write"]],
 )]
-class ProductVersion
+class ProductVersion implements OwnedEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -59,6 +61,7 @@ class ProductVersion
     #[ORM\JoinColumn(nullable: false)]
     #[Groups(["productVersion:read", "productVersion:write:post"])]
     #[Assert\NotBlank(message: "La variante de produit doit être liée à un produit")]
+    #[AppAssert\IsSelfOwned(options: ["message" => "Ce produit ne vous appartient pas"])]
     private ?Product $product;
 
     #[ORM\Column(length: 128)]
@@ -69,11 +72,13 @@ class ProductVersion
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
+    #[Assert\LessThanOrEqual(100000000, message: "Le prix ne peut pas être aussi élevé")]
     #[Groups(["productVersion:read", "productVersion:write"])]
     private ?int $price = null;
 
     #[ORM\Column(options: ["default" => true])]
     #[Groups(["productVersion:read", "productVersion:write"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private ?bool $visible = null;
 
     public function __construct(Product $product)

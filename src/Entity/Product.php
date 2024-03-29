@@ -13,15 +13,17 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
 use App\Repository\ProductRepository;
 use App\Security\ApiSecurityExpressionDirectory;
+use App\State\ProductStateProcessor;
+use App\Validator as AppAssert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -36,15 +38,14 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_PUBLIC_OBJECT
         ),
         new Post(
-            security: ApiSecurityExpressionDirectory::LOGGED_USER // TODO: force creating on a section on a menu of a self-owned restaurant
+            denormalizationContext: ["groups" => ["product:write", "product:write:post"]],
+            security: ApiSecurityExpressionDirectory::LOGGED_USER,
+            processor: ProductStateProcessor::class
         ),
         new Delete(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER // TODO: extra security to prevent deleting by mistake (user confirmation)
         ),
         new Patch(
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
-        ),
-        new Put(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
         )
     ],
@@ -58,7 +59,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     "sectionProducts.section.sectionMenu.menu.menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
 #[ApiFilter(BooleanFilter::class, properties: ["sectionProducts.visible"])]
-class Product
+class Product implements OwnedEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -81,6 +82,7 @@ class Product
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true, "default" => 0])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
+    #[Assert\LessThanOrEqual(100000000, message: "Le prix ne peut pas être aussi élevé")]
     #[Groups(["product:read", "product:write"])]
     #[ApiFilter(RangeFilter::class)]
     #[ApiFilter(ExistsFilter::class)]
@@ -101,6 +103,13 @@ class Product
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: SectionProduct::class, orphanRemoval: true, cascade: ["persist", "detach"])]
     #[Groups(["product:read:self", "up:product:read"])]
     private Collection $productSections;
+
+    #[Groups(["product:write:post"])]
+    #[Assert\NotBlank(message: "Une section doit être renseignée pour créer un produit")]
+    #[AppAssert\IsSelfOwned(options: ["message" => "Cette section ne vous appartient pas"])]
+    #[SerializedName("firstSection")]
+    /** Only used for API POST operations in related StateProcessor */
+    private ?Section $sectionForInit = null;
 
     public function __construct()
     {
@@ -244,5 +253,18 @@ class Product
     public function getOwner(): ?User
     {
         return $this->getProductSections()->first()->getSection()->getOwner();
+    }
+
+    public function getSectionForInit(): ?Section
+    {
+        return $this->sectionForInit;
+    }
+
+    /** To use only when creating a new product */
+    public function setSectionForInit(Section $sectionForInit): static
+    {
+        $this->sectionForInit = $sectionForInit;
+
+        return $this;
     }
 }
