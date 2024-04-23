@@ -19,6 +19,7 @@ use App\State\UserHashPasswordProcessor;
 use App\Validator as AppAssert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -79,7 +80,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     // TODO: specify on settings page that email can only be changed through Contact Us form (maybe create later a specific process for user to do it by himself, with email confirmation)
     private ?string $email = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: Types::JSON, options: ["jsonb" => true])]
     #[Groups(["user:read", "user:write"])]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)] // TODO: check if working as expected (find one role at a time)
     #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_ONLY)] // TODO: prevent "classic" admin from adding ROLE_ADMIN to another user

@@ -24,7 +24,7 @@ doctrine:
                 alias: App
         dql:
             numeric_functions:
-                rand: DoctrineExtensions\Query\Mysql\Rand
+                random: App\Doctrine\DQL\RandomFunction
 
 when@test:
     doctrine:

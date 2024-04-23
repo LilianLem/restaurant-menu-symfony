@@ -104,7 +104,7 @@ final class UserFactory extends ModelFactory
     {
         $qb = self::repository()->createQueryBuilder("u");
         $qb->where("u.roles = '[\"ROLE_USER\"]'")
-            ->orderBy("RAND()")
+            ->orderBy("RANDOM()")
             ->setMaxResults(1)
         ;
 
