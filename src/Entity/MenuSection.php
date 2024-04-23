@@ -2,10 +2,12 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Patch;
 use App\Repository\MenuSectionRepository;
+use App\Security\ApiSecurityExpressionDirectory;
+use App\State\RankedEntityStateProcessor;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -15,59 +17,58 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MenuSectionRepository::class)]
 #[ORM\UniqueConstraint("menu_section_unique", columns: ["menu_id", "section_id"])]
-#[ORM\UniqueConstraint("menu_section_rank_unique", columns: ["menu_id", "rank"])]
+//#[ORM\UniqueConstraint("menu_section_rank_unique", columns: ["menu_id", "rank"])]
 #[UniqueEntity(
     fields: ["menu", "section"],
     errorPath: "section",
     message: "Cette section est déjà reliée au menu",
 )]
-#[UniqueEntity(
+/*#[UniqueEntity(
     fields: ["menu", "rank"],
     errorPath: "rank",
     message: "Ce rang de section est déjà assigné sur ce menu",
-)]
+)]*/
 #[ApiResource(
     operations: [
         new Patch(
-            security: self::ADMIN_OR_OWNER_SECURITY_EXPR
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER,
+            processor: RankedEntityStateProcessor::class
         )
     ],
+    normalizationContext: ["groups" => ["menuSection:read", "menuSection:write"]],
     denormalizationContext: ["groups" => ["menuSection:write"]]
 )]
-class MenuSection
+class MenuSection implements OwnedEntityInterface, RankedEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
     #[ORM\Column(type: UlidType::NAME, unique: true)]
     #[ORM\CustomIdGenerator(class: "doctrine.ulid_generator")]
-    #[Groups(["up:section:read", "section:read", "menu:read:get"])]
+    #[Groups(["up:section:read", "section:read", "menu:read:get", "menuSection:read"])]
     private ?Ulid $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'menuSections', fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: false)]
     //#[Assert\NotBlank]
-    #[Groups(["up:section:read", "section:read:self"])]
+    #[Groups(["up:section:read", "section:read:self", "menuSection:read"])]
     private ?Menu $menu = null;
 
     #[ORM\OneToOne(inversedBy: 'sectionMenu', cascade: ['persist', 'remove'], fetch: "EAGER")]
     #[ORM\JoinColumn(nullable: false)]
     //#[Assert\NotBlank]
-    #[Groups(["menu:read:get"])]
+    #[Groups(["menu:read:get", "menuSection:read"])]
     private ?Section $section = null;
 
     #[ORM\Column(options: ["default" => false])]
     #[Groups(["up:section:read", "section:read", "menuSection:write", "menu:read:get"])]
-    #[ApiProperty(security: self::PROPERTIES_ADMIN_OR_OWNER_SECURITY_EXPR)]
     private ?bool $visible = null;
 
     #[ORM\Column(options: ["unsigned" => true])]
     #[Assert\Positive(message: "Le rang doit être positif")]
+    #[Assert\LessThan(10000, message: "Le rang doit être inférieur à 10000")]
     #[Assert\NotBlank]
     #[Groups(["up:section:read", "section:read", "menuSection:write", "menu:read:get"])]
     private ?int $rank = null;
-
-    private const string ADMIN_OR_OWNER_SECURITY_EXPR = 'is_granted("ROLE_ADMIN") or object.getMenu().getOwner() === user';
-    private const string PROPERTIES_ADMIN_OR_OWNER_SECURITY_EXPR = self::ADMIN_OR_OWNER_SECURITY_EXPR . " or object === null";
 
     public function __construct()
     {
@@ -125,5 +126,21 @@ class MenuSection
         $this->rank = $rank;
 
         return $this;
+    }
+
+    /** @return Collection<static> */
+    public function getSiblings(): Collection
+    {
+        return $this->getMenu()->getMenuSections();
+    }
+
+    public function getMaxParentCollectionRank(): ?int
+    {
+        return $this->getMenu()?->getMaxSectionRank() ?? null;
+    }
+
+    public function getOwner(): ?User
+    {
+        return $this->getMenu()->getOwner();
     }
 }

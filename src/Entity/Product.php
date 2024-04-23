@@ -31,7 +31,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: allow users to get only products on sections on menus on owned restaurants
+            security: ApiSecurityExpressionDirectory::LOGGED_USER
         ),
         new Get(
             normalizationContext: ["groups" => ["product:read", "product:read:self", "up:product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]],
@@ -252,7 +252,7 @@ class Product implements OwnedEntityInterface
 
     public function getOwner(): ?User
     {
-        return $this->getProductSections()->first()->getSection()->getOwner();
+        return $this->getProductSections()->first()->getOwner();
     }
 
     public function getSectionForInit(): ?Section
