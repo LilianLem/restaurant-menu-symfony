@@ -32,7 +32,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: allow users to get only menus on owned restaurants
+            security: ApiSecurityExpressionDirectory::LOGGED_USER
         ),
         new Get(
             normalizationContext: ["groups" => ["menu:read", "menu:read:self", "menu:read:get", "section:read", "up:menu:read", "up:restaurant:read"]],
@@ -88,6 +88,7 @@ class Menu implements OwnedEntityInterface
     private Collection $menuSections;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist"])]
+    #[ORM\OrderBy(["rank" => "ASC"])]
     #[Groups(["menu:read:self", "up:menu:read"])]
     private Collection $menuRestaurants;
 
@@ -273,7 +274,7 @@ class Menu implements OwnedEntityInterface
 
     public function getOwner(): ?User
     {
-        return $this->getMenuRestaurants()->first()->getRestaurant()->getOwner();
+        return $this->getMenuRestaurants()->first()->getOwner();
     }
 
     public function getRestaurantForInit(): ?Restaurant

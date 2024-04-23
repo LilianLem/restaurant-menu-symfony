@@ -32,7 +32,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: allow users to get only sections on menus on owned restaurants
+            security: ApiSecurityExpressionDirectory::LOGGED_USER
         ),
         new Get(
             normalizationContext: ["groups" => ["section:read", "section:read:self", "section:read:get", "product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]],
@@ -84,6 +84,7 @@ class Section implements OwnedEntityInterface
     private ?int $price = null;
 
     #[ORM\OneToMany(mappedBy: 'section', targetEntity: SectionProduct::class, orphanRemoval: true, cascade: ["persist"])]
+    #[ORM\OrderBy(["rank" => "ASC"])]
     #[Groups(["section:read"])]
     #[ApiFilter(ExistsFilter::class)]
     private Collection $sectionProducts;
@@ -201,7 +202,7 @@ class Section implements OwnedEntityInterface
 
     public function getOwner(): ?User
     {
-        return $this->getSectionMenu()->getMenu()->getOwner();
+        return $this->getSectionMenu()->getOwner();
     }
 
     public function getProductsFixturesData(): ?SectionProductsFixturesData

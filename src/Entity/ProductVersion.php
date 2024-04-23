@@ -2,7 +2,6 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -29,7 +28,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(
-            security: 'is_granted("ROLE_ADMIN") or object.getOwner() === user' // TODO: allow users to get only versions of products on sections on menus on owned restaurants
+            security: ApiSecurityExpressionDirectory::ADMIN_ONLY
         ),
         new Get(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_PUBLIC_OBJECT
@@ -48,6 +47,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     normalizationContext: ["groups" => ["productVersion:read", "product:read"]],
     denormalizationContext: ["groups" => ["productVersion:write"]],
 )]
+// TODO: add rank management
 class ProductVersion implements OwnedEntityInterface
 {
     #[ORM\Id]
@@ -78,7 +78,6 @@ class ProductVersion implements OwnedEntityInterface
 
     #[ORM\Column(options: ["default" => true])]
     #[Groups(["productVersion:read", "productVersion:write"])]
-    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private ?bool $visible = null;
 
     public function __construct(Product $product)

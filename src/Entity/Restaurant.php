@@ -38,7 +38,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(
-            security: ApiSecurityExpressionDirectory::ADMIN_ONLY // TODO: allow users to get only owned restaurants
+            security: ApiSecurityExpressionDirectory::LOGGED_USER
         ),
         new Get(
             normalizationContext: ["groups" => ["restaurant:read", "restaurant:read:self", "restaurant:read:get", "menu:read", "up:restaurant:read"]],
@@ -100,6 +100,7 @@ class Restaurant implements OwnedEntityInterface
     private ?string $description = null;
 
     #[ORM\OneToMany(mappedBy: 'restaurant', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist", "remove"])]
+    #[ORM\OrderBy(["rank" => "ASC"])]
     #[Groups(["restaurant:read"])]
     #[ApiFilter(ExistsFilter::class)]
     private Collection $restaurantMenus;
