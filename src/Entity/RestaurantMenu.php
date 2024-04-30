@@ -8,7 +8,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\RestaurantMenuRepository;
 use App\Security\ApiSecurityExpressionDirectory;
-use App\State\RankedEntityStateProcessor;
+use App\State\RankingEntityStateProcessor;
 use App\Validator as AppAssert;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -20,36 +20,32 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: RestaurantMenuRepository::class)]
 #[ORM\UniqueConstraint("restaurant_menu_unique", columns: ["restaurant_id", "menu_id"])]
-//#[ORM\UniqueConstraint("restaurant_menu_rank_unique", columns: ["restaurant_id", "rank"])]
 #[UniqueEntity(
     fields: ["restaurant", "menu"],
     errorPath: "menu",
     message: "Ce menu est déjà relié au restaurant",
 )]
-/*#[UniqueEntity(
-    fields: ["restaurant", "rank"],
-    errorPath: "rank",
-    message: "Ce rang de menu est déjà assigné sur ce restaurant",
-)]*/
 #[ApiResource(
     operations: [
         new Post(
             denormalizationContext: ["groups" => ["restaurantMenu:write", "restaurantMenu:write:post"]],
             security: ApiSecurityExpressionDirectory::LOGGED_USER,
-            processor: RankedEntityStateProcessor::class
+            processor: RankingEntityStateProcessor::class
         ),
         new Delete(
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER // TODO: extra security to prevent deleting by mistake (user confirmation)
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER, // TODO: extra security to prevent deleting by mistake (user confirmation)
+            processor: RankingEntityStateProcessor::class
         ),
         new Patch(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER,
-            processor: RankedEntityStateProcessor::class
+            processor: RankingEntityStateProcessor::class
         )
     ],
     normalizationContext: ["groups" => ["restaurantMenu:read", "restaurantMenu:write", "restaurantMenu:write:post"]],
     denormalizationContext: ["groups" => ["restaurantMenu:write"]]
 )]
-class RestaurantMenu implements OwnedEntityInterface, RankedEntityInterface
+#[AppAssert\CanRankingEntityBeDeleted(options: ["message" => "Ce menu n'est relié qu'à un seul restaurant. Veuillez supprimer le menu directement."], groups: ["self:delete"])]
+class RestaurantMenu implements OwnedEntityInterface, RankingEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -79,7 +75,6 @@ class RestaurantMenu implements OwnedEntityInterface, RankedEntityInterface
     #[ORM\Column(options: ["unsigned" => true])]
     #[Assert\Positive(message: "Le rang doit être positif")]
     #[Assert\LessThan(10000, message: "Le rang doit être inférieur à 10000")]
-    #[Assert\NotBlank] // TODO: autoset rank if empty
     #[Groups(["up:menu:read", "menu:read", "restaurantMenu:write", "restaurant:read:get"])]
     private ?int $rank = null;
 
@@ -144,7 +139,13 @@ class RestaurantMenu implements OwnedEntityInterface, RankedEntityInterface
     /** @return Collection<static> */
     public function getSiblings(): Collection
     {
-        return $this->getRestaurant()->getRestaurantMenus();
+        $siblings = $this->getRestaurant()->getRestaurantMenus();
+        return $siblings->filter(fn(self $element) => $element->getId() !== $this->getId());
+    }
+
+    public function getRankedEntity(): ?Menu
+    {
+        return $this->getMenu();
     }
 
     public function getMaxParentCollectionRank(): ?int

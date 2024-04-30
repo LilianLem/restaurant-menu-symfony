@@ -6,7 +6,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Patch;
 use App\Repository\MenuSectionRepository;
 use App\Security\ApiSecurityExpressionDirectory;
-use App\State\RankedEntityStateProcessor;
+use App\State\RankingEntityStateProcessor;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
@@ -17,28 +17,22 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MenuSectionRepository::class)]
 #[ORM\UniqueConstraint("menu_section_unique", columns: ["menu_id", "section_id"])]
-//#[ORM\UniqueConstraint("menu_section_rank_unique", columns: ["menu_id", "rank"])]
 #[UniqueEntity(
     fields: ["menu", "section"],
     errorPath: "section",
     message: "Cette section est déjà reliée au menu",
 )]
-/*#[UniqueEntity(
-    fields: ["menu", "rank"],
-    errorPath: "rank",
-    message: "Ce rang de section est déjà assigné sur ce menu",
-)]*/
 #[ApiResource(
     operations: [
         new Patch(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER,
-            processor: RankedEntityStateProcessor::class
+            processor: RankingEntityStateProcessor::class
         )
     ],
     normalizationContext: ["groups" => ["menuSection:read", "menuSection:write"]],
     denormalizationContext: ["groups" => ["menuSection:write"]]
 )]
-class MenuSection implements OwnedEntityInterface, RankedEntityInterface
+class MenuSection implements OwnedEntityInterface, RankingEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -66,7 +60,6 @@ class MenuSection implements OwnedEntityInterface, RankedEntityInterface
     #[ORM\Column(options: ["unsigned" => true])]
     #[Assert\Positive(message: "Le rang doit être positif")]
     #[Assert\LessThan(10000, message: "Le rang doit être inférieur à 10000")]
-    #[Assert\NotBlank]
     #[Groups(["up:section:read", "section:read", "menuSection:write", "menu:read:get"])]
     private ?int $rank = null;
 
@@ -131,7 +124,13 @@ class MenuSection implements OwnedEntityInterface, RankedEntityInterface
     /** @return Collection<static> */
     public function getSiblings(): Collection
     {
-        return $this->getMenu()->getMenuSections();
+        $siblings = $this->getMenu()->getMenuSections();
+        return $siblings->filter(fn(self $element) => $element->getId() !== $this->getId());
+    }
+
+    public function getRankedEntity(): ?Section
+    {
+        return $this->getSection();
     }
 
     public function getMaxParentCollectionRank(): ?int

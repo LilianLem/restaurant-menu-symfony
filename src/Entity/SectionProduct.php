@@ -8,7 +8,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\SectionProductRepository;
 use App\Security\ApiSecurityExpressionDirectory;
-use App\State\RankedEntityStateProcessor;
+use App\State\RankingEntityStateProcessor;
 use App\Validator as AppAssert;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -20,36 +20,32 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: SectionProductRepository::class)]
 #[ORM\UniqueConstraint("section_product_unique", columns: ["section_id", "product_id"])]
-//#[ORM\UniqueConstraint("section_product_rank_unique", columns: ["section_id", "rank"])]
 #[UniqueEntity(
     fields: ["section", "product"],
     errorPath: "product",
     message: "Ce produit est déjà relié à la section",
 )]
-/*#[UniqueEntity(
-    fields: ["section", "rank"],
-    errorPath: "rank",
-    message: "Ce rang de produit est déjà assigné sur cette section",
-)]*/
 #[ApiResource(
     operations: [
         new Post(
             denormalizationContext: ["groups" => ["sectionProduct:write", "sectionProduct:write:post"]],
             security: ApiSecurityExpressionDirectory::LOGGED_USER,
-            processor: RankedEntityStateProcessor::class
+            processor: RankingEntityStateProcessor::class
         ),
         new Delete(
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER // TODO: extra security to prevent deleting by mistake (user confirmation)
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER, // TODO: extra security to prevent deleting by mistake (user confirmation)
+            processor: RankingEntityStateProcessor::class
         ),
         new Patch(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER,
-            processor: RankedEntityStateProcessor::class
+            processor: RankingEntityStateProcessor::class
         )
     ],
     normalizationContext: ["groups" => ["sectionProduct:read", "sectionProduct:write", "sectionProduct:write:post"]],
     denormalizationContext: ["groups" => ["sectionProduct:write"]]
 )]
-class SectionProduct implements OwnedEntityInterface, RankedEntityInterface
+#[AppAssert\CanRankingEntityBeDeleted(options: ["message" => "Ce produit n'est relié qu'à une seule section. Veuillez supprimer le produit directement."], groups: ["self:delete"])]
+class SectionProduct implements OwnedEntityInterface, RankingEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -79,7 +75,6 @@ class SectionProduct implements OwnedEntityInterface, RankedEntityInterface
     #[ORM\Column(options: ["unsigned" => true])]
     #[Assert\Positive(message: "Le rang doit être positif")]
     #[Assert\LessThan(10000, message: "Le rang doit être inférieur à 10000")]
-    #[Assert\NotBlank] // TODO: autoset rank if empty
     #[Groups(["up:product:read", "product:read", "sectionProduct:write", "section:read:get"])]
     private ?int $rank = null;
 
@@ -132,7 +127,13 @@ class SectionProduct implements OwnedEntityInterface, RankedEntityInterface
     /** @return Collection<static> */
     public function getSiblings(): Collection
     {
-        return $this->getSection()->getSectionProducts();
+        $siblings = $this->getSection()->getSectionProducts();
+        return $siblings->filter(fn(self $element) => $element->getId() !== $this->getId());
+    }
+
+    public function getRankedEntity(): ?Product
+    {
+        return $this->getProduct();
     }
 
     public function getMaxParentCollectionRank(): ?int

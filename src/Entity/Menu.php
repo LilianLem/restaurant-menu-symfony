@@ -17,6 +17,7 @@ use ApiPlatform\Metadata\Post;
 use App\Repository\MenuRepository;
 use App\Security\ApiSecurityExpressionDirectory;
 use App\State\MenuStateProcessor;
+use App\State\RankedEntityStateProcessor;
 use App\Validator as AppAssert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -41,10 +42,12 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(
             denormalizationContext: ["groups" => ["menu:write", "menu:write:post"]],
             security: ApiSecurityExpressionDirectory::LOGGED_USER,
+            validationContext: ["groups" => ["Default", "postValidation"]],
             processor: MenuStateProcessor::class
         ),
         new Delete(
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER // TODO: extra security to prevent deleting by mistake (user confirmation)
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER, // TODO: extra security to prevent deleting by mistake (user confirmation)
+            processor: RankedEntityStateProcessor::class
         ),
         new Patch(
             denormalizationContext: ["groups" => ["menu:write", "menu:write:update"]],
@@ -61,7 +64,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     "menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
 #[ApiFilter(BooleanFilter::class, properties: ["menuRestaurants.visible"])]
-class Menu implements OwnedEntityInterface
+class Menu implements OwnedEntityInterface, RankedEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -83,12 +86,12 @@ class Menu implements OwnedEntityInterface
     private ?string $description = null;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: MenuSection::class, orphanRemoval: true, cascade: ["persist", "remove"])]
+    #[ORM\OrderBy(["rank" => "ASC"])]
     #[Groups(["menu:read"])]
     #[ApiFilter(ExistsFilter::class)]
     private Collection $menuSections;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist"])]
-    #[ORM\OrderBy(["rank" => "ASC"])]
     #[Groups(["menu:read:self", "up:menu:read"])]
     private Collection $menuRestaurants;
 
@@ -113,11 +116,18 @@ class Menu implements OwnedEntityInterface
     private ?bool $inTrash = null;
 
     #[Groups(["menu:write:post"])]
-    #[Assert\NotBlank(message: "Un restaurant doit être renseigné pour créer un menu")]
+    #[Assert\NotBlank(message: "Un restaurant doit être renseigné pour créer un menu", groups: ["postValidation"])]
     #[AppAssert\IsSelfOwned(options: ["message" => "Ce restaurant ne vous appartient pas"])]
     #[SerializedName("firstRestaurant")]
     /** Only used for API POST operations in related StateProcessor */
     private ?Restaurant $restaurantForInit = null;
+
+    #[Groups(["menu:write:post"])]
+    #[Assert\Positive(message: "Le rang doit être positif")]
+    #[Assert\LessThan(10000, message: "Le rang doit être inférieur à 10000")]
+    #[SerializedName("firstRestaurantRank")]
+    /** Only used for API POST operations in related StateProcessor */
+    private ?int $rankOnRestaurantForInit = null;
 
     public function __construct()
     {
@@ -183,6 +193,14 @@ class Menu implements OwnedEntityInterface
         }
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, RestaurantMenu>
+     */
+    public function getRankingEntities(): Collection
+    {
+        return $this->getMenuRestaurants();
     }
 
     /**
@@ -285,6 +303,18 @@ class Menu implements OwnedEntityInterface
     public function setRestaurantForInit(Restaurant $restaurantForInit): static
     {
         $this->restaurantForInit = $restaurantForInit;
+
+        return $this;
+    }
+
+    public function getRankOnRestaurantForInit(): ?int
+    {
+        return $this->rankOnRestaurantForInit;
+    }
+
+    public function setRankOnRestaurantForInit(int $rankOnRestaurantForInit): static
+    {
+        $this->rankOnRestaurantForInit = $rankOnRestaurantForInit;
 
         return $this;
     }

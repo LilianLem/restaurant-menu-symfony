@@ -16,6 +16,7 @@ use ApiPlatform\Metadata\Post;
 use App\Repository\ProductRepository;
 use App\Security\ApiSecurityExpressionDirectory;
 use App\State\ProductStateProcessor;
+use App\State\RankedEntityStateProcessor;
 use App\Validator as AppAssert;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -40,10 +41,12 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(
             denormalizationContext: ["groups" => ["product:write", "product:write:post"]],
             security: ApiSecurityExpressionDirectory::LOGGED_USER,
+            validationContext: ["groups" => ["Default", "postValidation"]],
             processor: ProductStateProcessor::class
         ),
         new Delete(
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER // TODO: extra security to prevent deleting by mistake (user confirmation)
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER, // TODO: extra security to prevent deleting by mistake (user confirmation)
+            processor: RankedEntityStateProcessor::class
         ),
         new Patch(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
@@ -59,7 +62,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     "sectionProducts.section.sectionMenu.menu.menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
 #[ApiFilter(BooleanFilter::class, properties: ["sectionProducts.visible"])]
-class Product implements OwnedEntityInterface
+class Product implements OwnedEntityInterface, RankedEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -105,11 +108,18 @@ class Product implements OwnedEntityInterface
     private Collection $productSections;
 
     #[Groups(["product:write:post"])]
-    #[Assert\NotBlank(message: "Une section doit être renseignée pour créer un produit")]
+    #[Assert\NotBlank(message: "Une section doit être renseignée pour créer un produit", groups: ["postValidation"])]
     #[AppAssert\IsSelfOwned(options: ["message" => "Cette section ne vous appartient pas"])]
     #[SerializedName("firstSection")]
     /** Only used for API POST operations in related StateProcessor */
     private ?Section $sectionForInit = null;
+
+    #[Groups(["product:write:post"])]
+    #[Assert\Positive(message: "Le rang doit être positif")]
+    #[Assert\LessThan(10000, message: "Le rang doit être inférieur à 10000")]
+    #[SerializedName("firstSectionRank")]
+    /** Only used for API POST operations in related StateProcessor */
+    private ?int $rankOnSectionForInit = null;
 
     public function __construct()
     {
@@ -216,6 +226,14 @@ class Product implements OwnedEntityInterface
     /**
      * @return Collection<int, SectionProduct>
      */
+    public function getRankingEntities(): Collection
+    {
+        return $this->getProductSections();
+    }
+
+    /**
+     * @return Collection<int, SectionProduct>
+     */
     public function getProductSections(): Collection
     {
         return $this->productSections;
@@ -264,6 +282,19 @@ class Product implements OwnedEntityInterface
     public function setSectionForInit(Section $sectionForInit): static
     {
         $this->sectionForInit = $sectionForInit;
+
+        return $this;
+    }
+
+    public function getRankOnSectionForInit(): ?int
+    {
+        return $this->rankOnSectionForInit;
+    }
+
+    /** To use only when creating a new product */
+    public function setRankOnSectionForInit(int $rankOnSectionForInit): static
+    {
+        $this->rankOnSectionForInit = $rankOnSectionForInit;
 
         return $this;
     }

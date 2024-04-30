@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Section;
 use App\Service\MenuService;
+use App\Service\RankingEntityService;
 use Override;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -15,7 +16,8 @@ class SectionStateProcessor implements ProcessorInterface
 {
     public function __construct(
         #[Autowire(service: PersistProcessor::class)] private ProcessorInterface $innerProcessor,
-        private MenuService $menuService
+        private MenuService $menuService,
+        private RankingEntityService $rankingEntityService
     )
     {
 
@@ -26,7 +28,13 @@ class SectionStateProcessor implements ProcessorInterface
         assert($data instanceof Section);
 
         if($operation instanceof Post && $data->getMenuForInit()) {
-            $this->menuService->addSectionToMenu($data->getMenuForInit(), $data);
+            $rankingEntity = $this->menuService->addSectionToMenu($data->getMenuForInit(), $data);
+
+            if($data->getRankOnMenuForInit()) {
+                $originalRank = $rankingEntity->getRank();
+                $rankingEntity->setRank($data->getRankOnMenuForInit());
+                $this->rankingEntityService->changeRanks($rankingEntity, $originalRank);
+            }
         }
 
         return $this->innerProcessor->process($data, $operation, $uriVariables, $context);

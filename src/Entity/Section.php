@@ -16,6 +16,7 @@ use ApiPlatform\Metadata\Post;
 use App\DataFixtures\SectionProductsFixturesData;
 use App\Repository\SectionRepository;
 use App\Security\ApiSecurityExpressionDirectory;
+use App\State\RankedEntityStateProcessor;
 use App\State\SectionStateProcessor;
 use App\Validator as AppAssert;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -41,10 +42,12 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Post(
             denormalizationContext: ["groups" => ["section:write", "section:write:post"]],
             security: ApiSecurityExpressionDirectory::LOGGED_USER,
+            validationContext: ["groups" => ["Default", "postValidation"]],
             processor: SectionStateProcessor::class
         ),
         new Delete(
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER // TODO: extra security to prevent deleting by mistake (user confirmation)
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER, // TODO: extra security to prevent deleting by mistake (user confirmation)
+            processor: RankedEntityStateProcessor::class
         ),
         new Patch(
             denormalizationContext: ["groups" => ["section:write", "section:write:update"]],
@@ -60,7 +63,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     "sectionMenu.menu.menuRestaurants.restaurant" => SearchFilter::STRATEGY_EXACT,
     "sectionMenu.menu.menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
-class Section implements OwnedEntityInterface
+class Section implements OwnedEntityInterface, RankedEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -94,11 +97,18 @@ class Section implements OwnedEntityInterface
     private ?MenuSection $sectionMenu = null;
 
     #[Groups(["section:write:post"])]
-    #[Assert\NotBlank(message: "Un menu doit être renseigné pour créer une section")]
+    #[Assert\NotBlank(message: "Un menu doit être renseigné pour créer une section", groups: ["postValidation"])]
     #[AppAssert\IsSelfOwned(options: ["message" => "Ce menu ne vous appartient pas"])]
     #[SerializedName("menu")]
     /** Only used for API POST operations in related StateProcessor */
     private ?Menu $menuForInit = null;
+
+    #[Groups(["section:write:post"])]
+    #[Assert\Positive(message: "Le rang doit être positif")]
+    #[Assert\LessThan(10000, message: "Le rang doit être inférieur à 10000")]
+    #[SerializedName("menuRank")]
+    /** Only used for API POST operations in related StateProcessor */
+    private ?int $rankOnMenuForInit = null;
 
     // Used only in fixtures
     private readonly SectionProductsFixturesData $productsFixturesData;
@@ -167,6 +177,11 @@ class Section implements OwnedEntityInterface
         return $this;
     }
 
+    public function getRankingEntities(): ?MenuSection
+    {
+        return $this->getSectionMenu();
+    }
+
     public function getSectionMenu(): ?MenuSection
     {
         return $this->sectionMenu;
@@ -233,6 +248,18 @@ class Section implements OwnedEntityInterface
     public function setMenuForInit(Menu $menuForInit): static
     {
         $this->menuForInit = $menuForInit;
+
+        return $this;
+    }
+
+    public function getRankOnMenuForInit(): ?int
+    {
+        return $this->rankOnMenuForInit;
+    }
+
+    public function setRankOnMenuForInit(int $rankOnmenuForInit): static
+    {
+        $this->rankOnMenuForInit = $rankOnmenuForInit;
 
         return $this;
     }
