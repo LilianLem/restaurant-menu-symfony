@@ -89,10 +89,12 @@ class Menu implements OwnedEntityInterface, RankedEntityInterface
     #[ORM\OrderBy(["rank" => "ASC"])]
     #[Groups(["menu:read"])]
     #[ApiFilter(ExistsFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private Collection $menuSections;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist"])]
     #[Groups(["menu:read:self", "up:menu:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private Collection $menuRestaurants;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -173,6 +175,22 @@ class Menu implements OwnedEntityInterface, RankedEntityInterface
         return $this->menuSections;
     }
 
+    /**
+     * @return Collection<int, MenuSection>
+     */
+    #[Groups(["menu:read"])]
+    #[ApiFilter(ExistsFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::NOT_ADMIN_NOR_OWNER_AND_NOT_NULL_OBJECT)]
+    #[SerializedName("menuSections")]
+    public function getPublicMenuSections(): Collection
+    {
+        return new ArrayCollection(
+            $this->menuSections->filter(
+                fn(MenuSection $mSection) => $mSection->isVisible()
+            )->getValues()
+        );
+    }
+
     public function addMenuSection(MenuSection $menuSection): static
     {
         if (!$this->menuSections->contains($menuSection)) {
@@ -209,6 +227,21 @@ class Menu implements OwnedEntityInterface, RankedEntityInterface
     public function getMenuRestaurants(): Collection
     {
         return $this->menuRestaurants;
+    }
+
+    /**
+     * @return Collection<int, RestaurantMenu>
+     */
+    #[Groups(["menu:read:self", "up:menu:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::NOT_ADMIN_NOR_OWNER_AND_NOT_NULL_OBJECT)]
+    #[SerializedName("menuRestaurants")]
+    public function getPublicMenuRestaurants(): Collection
+    {
+        return new ArrayCollection(
+            $this->menuRestaurants->filter(
+                fn(RestaurantMenu $rMenu) => $rMenu->isVisible() && $rMenu->getRestaurant()->isPublic()
+            )->getValues()
+        );
     }
 
     public function addMenuRestaurant(RestaurantMenu $menuRestaurant): static

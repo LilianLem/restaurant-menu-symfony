@@ -10,7 +10,9 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\ProductVersionRepository;
 use App\Security\ApiSecurityExpressionDirectory;
+use App\State\RankingEntityStateProcessor;
 use App\Validator as AppAssert;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -35,26 +37,29 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Post(
             denormalizationContext: ["groups" => ["productVersion:write", "productVersion:write:post"]],
-            security: ApiSecurityExpressionDirectory::LOGGED_USER
+            security: ApiSecurityExpressionDirectory::LOGGED_USER,
+            processor: RankingEntityStateProcessor::class
         ),
         new Delete(
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER,
+            processor: RankingEntityStateProcessor::class
         ),
         new Patch(
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER,
+            processor: RankingEntityStateProcessor::class
         )
     ],
     normalizationContext: ["groups" => ["productVersion:read", "product:read"]],
     denormalizationContext: ["groups" => ["productVersion:write"]],
 )]
 // TODO: add rank management
-class ProductVersion implements OwnedEntityInterface
+class ProductVersion implements OwnedEntityInterface, RankingEntityInterface, RankedEntityInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
     #[ORM\Column(type: UlidType::NAME, unique: true)]
     #[ORM\CustomIdGenerator(class: "doctrine.ulid_generator")]
-    #[Groups(["productVersion:read"])]
+    #[Groups(["productVersion:read", "product:read"])]
     private ?Ulid $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'versions')]
@@ -67,18 +72,24 @@ class ProductVersion implements OwnedEntityInterface
     #[ORM\Column(length: 128)]
     #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Le nom de la variante du produit est obligatoire")]
-    #[Groups(["productVersion:read", "productVersion:write"])]
+    #[Groups(["productVersion:read", "productVersion:write", "product:read"])]
     private ?string $name = null;
 
     #[ORM\Column(nullable: true, options: ["unsigned" => true])]
     #[Assert\PositiveOrZero(message: "Le prix ne peut pas être négatif")]
     #[Assert\LessThanOrEqual(100000000, message: "Le prix ne peut pas être aussi élevé")]
-    #[Groups(["productVersion:read", "productVersion:write"])]
+    #[Groups(["productVersion:read", "productVersion:write", "product:read"])]
     private ?int $price = null;
 
     #[ORM\Column(options: ["default" => true])]
-    #[Groups(["productVersion:read", "productVersion:write"])]
+    #[Groups(["productVersion:read", "productVersion:write", "product:read"])]
     private ?bool $visible = null;
+
+    #[ORM\Column(options: ["unsigned" => true])]
+    #[Assert\Positive(message: "Le rang doit être positif")]
+    #[Assert\LessThan(10000, message: "Le rang doit être inférieur à 10000")]
+    #[Groups(["productVersion:read", "productVersion:write", "product:read"])]
+    private ?int $rank = null;
 
     public function __construct(Product $product)
     {
@@ -147,5 +158,38 @@ class ProductVersion implements OwnedEntityInterface
     public function getOwner(): ?User
     {
         return $this->getProduct()->getOwner();
+    }
+
+    public function getRankingEntities(): static
+    {
+        return $this;
+    }
+
+    public function getRank(): ?int
+    {
+        return $this->rank;
+    }
+
+    public function setRank(int $rank): static
+    {
+        $this->rank = $rank;
+
+        return $this;
+    }
+
+    public function getSiblings(): Collection
+    {
+        $siblings = $this->getProduct()->getVersions();
+        return $siblings->filter(fn(self $element) => $element->getId() !== $this->getId());
+    }
+
+    public function getRankedEntity(): static
+    {
+        return $this;
+    }
+
+    public function getMaxParentCollectionRank(): ?int
+    {
+        return $this->getProduct()?->getMaxVersionRank() ?? null;
     }
 }

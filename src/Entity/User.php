@@ -81,8 +81,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     #[Groups(["user:read", "user:write"])]
-    #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_EXACT)] // TODO: check if working as expected (find one role at a time)
-    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_ONLY)] // TODO: prevent "classic" admin from adding ROLE_ADMIN to another user
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_ONLY)]
     #[AppAssert\AreRolesAllowed]
     private array $roles = [];
 

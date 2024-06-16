@@ -7,6 +7,7 @@ use ApiPlatform\Doctrine\Orm\Filter\ExistsFilter;
 use ApiPlatform\Doctrine\Orm\Filter\RangeFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -35,7 +36,7 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: ApiSecurityExpressionDirectory::LOGGED_USER
         ),
         new Get(
-            normalizationContext: ["groups" => ["product:read", "product:read:self", "up:product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]],
+            normalizationContext: ["groups" => ["product:read", "product:read:self", "product:read:get", "up:product:read", "up:section:read", "up:menu:read", "up:restaurant:read"]],
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_PUBLIC_OBJECT
         ),
         new Post(
@@ -99,12 +100,15 @@ class Product implements OwnedEntityInterface, RankedEntityInterface
     private Collection $allergens;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductVersion::class, orphanRemoval: true, cascade: ["persist"])]
+    #[ORM\OrderBy(["rank" => "ASC"])]
     #[Groups(["product:read:self", "section:read:self"])]
     #[ApiFilter(ExistsFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private Collection $versions;
 
     #[ORM\OneToMany(mappedBy: 'product', targetEntity: SectionProduct::class, orphanRemoval: true, cascade: ["persist", "detach"])]
     #[Groups(["product:read:self", "up:product:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private Collection $productSections;
 
     #[Groups(["product:write:post"])]
@@ -201,6 +205,22 @@ class Product implements OwnedEntityInterface, RankedEntityInterface
         return $this->versions;
     }
 
+    /**
+     * @return Collection<int, ProductVersion>
+     */
+    #[Groups(["product:read:self", "section:read:self"])]
+    #[ApiFilter(ExistsFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::NOT_ADMIN_NOR_OWNER_AND_NOT_NULL_OBJECT)]
+    #[SerializedName("versions")]
+    public function getPublicVersions(): Collection
+    {
+        return new ArrayCollection(
+            $this->versions->filter(
+                fn(ProductVersion $version) => $version->isVisible()
+            )->getValues()
+        );
+    }
+
     public function addVersion(ProductVersion $version): static
     {
         if (!$this->versions->contains($version)) {
@@ -237,6 +257,20 @@ class Product implements OwnedEntityInterface, RankedEntityInterface
     public function getProductSections(): Collection
     {
         return $this->productSections;
+    }
+
+    /**
+     * @return Collection<int, SectionProduct>
+     */
+    #[Groups(["product:read:self", "up:product:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::NOT_ADMIN_NOR_OWNER_AND_NOT_NULL_OBJECT)]
+    public function getPublicProductSections(): Collection
+    {
+        return new ArrayCollection(
+            $this->productSections->filter(
+                fn(SectionProduct $sProduct) => $sProduct->isVisible() && $sProduct->getSection()->isPublic()
+            )->getValues()
+        );
     }
 
     public function addProductSection(SectionProduct $productSection): static
@@ -297,5 +331,16 @@ class Product implements OwnedEntityInterface, RankedEntityInterface
         $this->rankOnSectionForInit = $rankOnSectionForInit;
 
         return $this;
+    }
+
+    #[Groups(["product:read:get"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getMaxVersionRank(): int
+    {
+        if($this->getVersions()->isEmpty()) {
+            return 0;
+        }
+
+        return $this->getVersions()->reduce(fn(int $maxRank, ProductVersion $version): int => $version->getRank() > $maxRank ? $version->getRank() : $maxRank, 0);
     }
 }

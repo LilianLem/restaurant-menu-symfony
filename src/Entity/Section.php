@@ -90,6 +90,7 @@ class Section implements OwnedEntityInterface, RankedEntityInterface
     #[ORM\OrderBy(["rank" => "ASC"])]
     #[Groups(["section:read"])]
     #[ApiFilter(ExistsFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private Collection $sectionProducts;
 
     #[ORM\OneToOne(mappedBy: 'section', cascade: ['persist', 'remove'])]
@@ -153,6 +154,22 @@ class Section implements OwnedEntityInterface, RankedEntityInterface
     public function getSectionProducts(): Collection
     {
         return $this->sectionProducts;
+    }
+
+    /**
+     * @return Collection<int, SectionProduct>
+     */
+    #[Groups(["section:read"])]
+    #[ApiFilter(ExistsFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::NOT_ADMIN_NOR_OWNER_AND_NOT_NULL_OBJECT)]
+    #[SerializedName("sectionProducts")]
+    public function getPublicSectionProducts(): Collection
+    {
+        return new ArrayCollection(
+            $this->sectionProducts->filter(
+                fn(SectionProduct $sProduct) => $sProduct->isVisible()
+            )->getValues()
+        );
     }
 
     public function addSectionProduct(SectionProduct $sectionProduct): static

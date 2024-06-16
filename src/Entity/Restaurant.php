@@ -24,6 +24,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -103,6 +104,7 @@ class Restaurant implements OwnedEntityInterface
     #[ORM\OrderBy(["rank" => "ASC"])]
     #[Groups(["restaurant:read"])]
     #[ApiFilter(ExistsFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     private Collection $restaurantMenus;
 
     #[ORM\ManyToOne(inversedBy: 'restaurants')]
@@ -185,6 +187,22 @@ class Restaurant implements OwnedEntityInterface
     public function getRestaurantMenus(): Collection
     {
         return $this->restaurantMenus;
+    }
+
+    /**
+     * @return Collection<int, RestaurantMenu>
+     */
+    #[Groups(["restaurant:read"])]
+    #[ApiFilter(ExistsFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::NOT_ADMIN_NOR_OWNER_AND_NOT_NULL_OBJECT)]
+    #[SerializedName("restaurantMenus")]
+    public function getPublicRestaurantMenus(): Collection
+    {
+        return new ArrayCollection(
+            $this->restaurantMenus->filter(
+                fn(RestaurantMenu $rMenu) => $rMenu->isVisible() && !$rMenu->getMenu()->isInTrash()
+            )->getValues()
+        );
     }
 
     public function addRestaurantMenu(RestaurantMenu $restaurantMenu): static
