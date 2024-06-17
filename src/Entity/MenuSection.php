@@ -2,16 +2,19 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Patch;
 use App\Repository\MenuSectionRepository;
 use App\Security\ApiSecurityExpressionDirectory;
 use App\State\RankingEntityStateProcessor;
+use Carbon\Carbon;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -34,6 +37,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 class MenuSection implements OwnedEntityInterface, RankingEntityInterface
 {
+    use TimestampableEntityTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
     #[ORM\Column(type: UlidType::NAME, unique: true)]
@@ -141,5 +146,19 @@ class MenuSection implements OwnedEntityInterface, RankingEntityInterface
     public function getOwner(): ?User
     {
         return $this->getMenu()->getOwner();
+    }
+
+    #[Groups(["up:section:read", "section:read", "menu:read:get", "menuSection:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getCreatedAt(): ?Carbon
+    {
+        return $this->createdAt;
+    }
+
+    #[Groups(["up:section:read", "section:read", "menu:read:get", "menuSection:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getUpdatedAt(): ?Carbon
+    {
+        return $this->updatedAt;
     }
 }

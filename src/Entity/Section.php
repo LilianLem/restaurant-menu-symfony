@@ -19,6 +19,7 @@ use App\Security\ApiSecurityExpressionDirectory;
 use App\State\RankedEntityStateProcessor;
 use App\State\SectionStateProcessor;
 use App\Validator as AppAssert;
+use Carbon\Carbon;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -65,6 +66,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 ])]
 class Section implements OwnedEntityInterface, RankedEntityInterface
 {
+    use TimestampableEntityTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
     #[ORM\Column(type: UlidType::NAME, unique: true)]
@@ -72,8 +75,8 @@ class Section implements OwnedEntityInterface, RankedEntityInterface
     #[Groups(["section:read", "up:product:read"])]
     private ?Ulid $id = null;
 
-    #[ORM\Column(length: 128, nullable: true)]
-    #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
+    #[ORM\Column(length: 64, nullable: true)]
+    #[Assert\Length(max: 64, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Groups(["section:read", "section:write", "up:product:read"])]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_PARTIAL)]
     private ?string $name = null;
@@ -279,5 +282,19 @@ class Section implements OwnedEntityInterface, RankedEntityInterface
         $this->rankOnMenuForInit = $rankOnmenuForInit;
 
         return $this;
+    }
+
+    #[Groups(["section:read", "up:product:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getCreatedAt(): ?Carbon
+    {
+        return $this->createdAt;
+    }
+
+    #[Groups(["section:read", "up:product:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getUpdatedAt(): ?Carbon
+    {
+        return $this->updatedAt;
     }
 }

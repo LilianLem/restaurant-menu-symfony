@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -12,11 +13,13 @@ use App\Repository\ProductVersionRepository;
 use App\Security\ApiSecurityExpressionDirectory;
 use App\State\RankingEntityStateProcessor;
 use App\Validator as AppAssert;
+use Carbon\Carbon;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -55,6 +58,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 // TODO: add rank management
 class ProductVersion implements OwnedEntityInterface, RankingEntityInterface, RankedEntityInterface
 {
+    use TimestampableEntityTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
     #[ORM\Column(type: UlidType::NAME, unique: true)]
@@ -191,5 +196,19 @@ class ProductVersion implements OwnedEntityInterface, RankingEntityInterface, Ra
     public function getMaxParentCollectionRank(): ?int
     {
         return $this->getProduct()?->getMaxVersionRank() ?? null;
+    }
+
+    #[Groups(["productVersion:read", "product:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getCreatedAt(): ?Carbon
+    {
+        return $this->createdAt;
+    }
+
+    #[Groups(["productVersion:read", "product:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getUpdatedAt(): ?Carbon
+    {
+        return $this->updatedAt;
     }
 }

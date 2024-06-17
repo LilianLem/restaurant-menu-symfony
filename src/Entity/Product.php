@@ -19,6 +19,7 @@ use App\Security\ApiSecurityExpressionDirectory;
 use App\State\ProductStateProcessor;
 use App\State\RankedEntityStateProcessor;
 use App\Validator as AppAssert;
+use Carbon\Carbon;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -65,6 +66,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiFilter(BooleanFilter::class, properties: ["sectionProducts.visible"])]
 class Product implements OwnedEntityInterface, RankedEntityInterface
 {
+    use TimestampableEntityTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
     #[ORM\Column(type: UlidType::NAME, unique: true)]
@@ -342,5 +345,19 @@ class Product implements OwnedEntityInterface, RankedEntityInterface
         }
 
         return $this->getVersions()->reduce(fn(int $maxRank, ProductVersion $version): int => $version->getRank() > $maxRank ? $version->getRank() : $maxRank, 0);
+    }
+
+    #[Groups(["product:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getCreatedAt(): ?Carbon
+    {
+        return $this->createdAt;
+    }
+
+    #[Groups(["product:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getUpdatedAt(): ?Carbon
+    {
+        return $this->updatedAt;
     }
 }

@@ -17,10 +17,12 @@ use App\Repository\RestaurantRepository;
 use App\Security\ApiSecurityExpressionDirectory;
 use App\State\RestaurantStateProcessor;
 use App\Validator as AppAssert;
+use Carbon\Carbon;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
@@ -69,6 +71,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 ])]
 class Restaurant implements OwnedEntityInterface
 {
+    use TimestampableEntityTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
     #[ORM\Column(type: UlidType::NAME, unique: true)]
@@ -76,8 +80,8 @@ class Restaurant implements OwnedEntityInterface
     #[Groups(["restaurant:read", "up:menu:read"])]
     private ?Ulid $id = null;
 
-    #[ORM\Column(length: 128)]
-    #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
+    #[ORM\Column(length: 64)]
+    #[Assert\Length(max: 64, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Le nom du restaurant est obligatoire")]
     #[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_WORD_START)]
@@ -99,6 +103,13 @@ class Restaurant implements OwnedEntityInterface
     #[Assert\Length(max: 1000, maxMessage: "La description ne doit pas dépasser {{ limit }} caractères")]
     #[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])]
     private ?string $description = null;
+
+    #[ORM\Column(length: 96, unique: true)]
+    #[Assert\Length(max: 96, maxMessage: "L'identifiant ne doit pas dépasser {{ limit }} caractères")]
+    #[Assert\Unique(message: "Cet identifiant de restaurant est déjà utilisé")]
+    #[Groups(["restaurant:read", "up:menu:read"])]
+    #[Gedmo\Slug(fields: ["name"])]
+    private ?string $slug = null;
 
     #[ORM\OneToMany(mappedBy: 'restaurant', targetEntity: RestaurantMenu::class, orphanRemoval: true, cascade: ["persist", "remove"])]
     #[ORM\OrderBy(["rank" => "ASC"])]
@@ -177,6 +188,18 @@ class Restaurant implements OwnedEntityInterface
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(string $slug): static
+    {
+        $this->slug = $slug;
 
         return $this;
     }
@@ -265,5 +288,19 @@ class Restaurant implements OwnedEntityInterface
     public function isPublic(): bool
     {
         return $this->getOwner()->areRestaurantsPublic() && !$this->isInTrash() && $this->isVisible();
+    }
+
+    #[Groups(["restaurant:read", "up:menu:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getCreatedAt(): ?Carbon
+    {
+        return $this->createdAt;
+    }
+
+    #[Groups(["restaurant:read", "up:menu:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getUpdatedAt(): ?Carbon
+    {
+        return $this->updatedAt;
     }
 }

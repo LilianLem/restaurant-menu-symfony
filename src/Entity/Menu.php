@@ -19,10 +19,12 @@ use App\Security\ApiSecurityExpressionDirectory;
 use App\State\MenuStateProcessor;
 use App\State\RankedEntityStateProcessor;
 use App\Validator as AppAssert;
+use Carbon\Carbon;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Attribute\SerializedName;
@@ -66,6 +68,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiFilter(BooleanFilter::class, properties: ["menuRestaurants.visible"])]
 class Menu implements OwnedEntityInterface, RankedEntityInterface
 {
+    use TimestampableEntityTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
     #[ORM\Column(type: UlidType::NAME, unique: true)]
@@ -73,8 +77,8 @@ class Menu implements OwnedEntityInterface, RankedEntityInterface
     #[Groups(["menu:read", "up:section:read"])]
     private ?Ulid $id = null;
 
-    #[ORM\Column(length: 128)]
-    #[Assert\Length(max: 128, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
+    #[ORM\Column(length: 64)]
+    #[Assert\Length(max: 64, maxMessage: "Le nom ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Le nom du menu est obligatoire")]
     #[Groups(["menu:read", "menu:write", "up:section:read"])]
     #[ApiFilter(SearchFilter::class, strategy: SearchFilter::STRATEGY_PARTIAL)]
@@ -84,6 +88,13 @@ class Menu implements OwnedEntityInterface, RankedEntityInterface
     #[Assert\Length(max: 1000, maxMessage: "La description ne doit pas dépasser {{ limit }} caractères")]
     #[Groups(["menu:read", "menu:write", "up:section:read"])]
     private ?string $description = null;
+
+    #[ORM\Column(length: 96, unique: true)]
+    #[Assert\Length(max: 96, maxMessage: "L'identifiant ne doit pas dépasser {{ limit }} caractères")]
+    #[Assert\Unique(message: "Cet identifiant de menu est déjà utilisé")]
+    #[Groups(["menu:read", "up:section:read"])]
+    #[Gedmo\Slug(fields: ["name"])]
+    private ?string $slug = null;
 
     #[ORM\OneToMany(mappedBy: 'menu', targetEntity: MenuSection::class, orphanRemoval: true, cascade: ["persist", "remove"])]
     #[ORM\OrderBy(["rank" => "ASC"])]
@@ -163,6 +174,18 @@ class Menu implements OwnedEntityInterface, RankedEntityInterface
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(string $slug): static
+    {
+        $this->slug = $slug;
 
         return $this;
     }
@@ -350,5 +373,19 @@ class Menu implements OwnedEntityInterface, RankedEntityInterface
         $this->rankOnRestaurantForInit = $rankOnRestaurantForInit;
 
         return $this;
+    }
+
+    #[Groups(["menu:read", "up:section:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getCreatedAt(): ?Carbon
+    {
+        return $this->createdAt;
+    }
+
+    #[Groups(["menu:read", "up:section:read"])]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
+    public function getUpdatedAt(): ?Carbon
+    {
+        return $this->updatedAt;
     }
 }

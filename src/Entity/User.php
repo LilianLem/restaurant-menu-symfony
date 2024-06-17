@@ -17,6 +17,7 @@ use App\Repository\UserRepository;
 use App\Security\ApiSecurityExpressionDirectory;
 use App\State\UserHashPasswordProcessor;
 use App\Validator as AppAssert;
+use Carbon\Carbon;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -30,6 +31,7 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
+// TODO: add a /me route (best way would be to tweak /users/{id} GET request in a StateProvider to return logged user data or throw a 4xx error)
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[UniqueEntity("email", message: "Une erreur est survenue dans la création du compte. Si vous en avez déjà un, cliquez sur Connexion")]
@@ -62,6 +64,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 )]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    use TimestampableEntityTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
     #[ORM\Column(type: UlidType::NAME, unique: true)]
@@ -272,5 +276,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function areRestaurantsPublic(): bool
     {
         return $this->isEnabled() && $this->isVerified();
+    }
+
+    #[Groups(["user:read", "up:restaurant:read"])]
+    public function getCreatedAt(): ?Carbon
+    {
+        return $this->createdAt;
+    }
+
+    #[Groups(["user:read", "up:restaurant:read"])]
+    public function getUpdatedAt(): ?Carbon
+    {
+        return $this->updatedAt;
     }
 }
