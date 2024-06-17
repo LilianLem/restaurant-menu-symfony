@@ -1,0 +1,6 @@
+<p>Pour réinitialiser votre mot de passe, cliquez ici :</p>
+{# TODO: redirect to frontend #}
+<a href="{# url("app_reset_password", {token: resetToken.token}) #}{{ url("_api_/reset-password/process_post") }}" target="_blank">{{ url("_api_/reset-password/process_post") }}{# url("app_reset_password", {token: resetToken.token}) #}</a>
+<p>Token : {{ resetToken.token }}</p>{# TODO: remove when frontend will be available #}
+
+<p>Ce lien expirera dans 24h. Après ce délai, une nouvelle demande devra être effectuée.</p>

@@ -44,10 +44,10 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Post(
             denormalizationContext: ["groups" => ["user:write", "user:write:post"]],
-            security: 'is_granted("ROLE_ADMIN") or not(is_granted("ROLE_USER"))', // Prevents a new registration when already connected (except when admin)
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_NOT_LOGGED, // Prevents a new registration when already connected (except when admin)
             validationContext: ["groups" => ["Default", "postValidation"]],
             processor: UserHashPasswordProcessor::class
-        ), // TODO: handle user registration
+        ),
         new Delete(
             security: 'is_granted("ROLE_ADMIN") and object !== user' // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation)
         ),
@@ -85,8 +85,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[AppAssert\AreRolesAllowed]
     private array $roles = [];
 
-    // TODO: add a reset password process (can be triggered anonymously if email is provided, or by admin)
-    #[Assert\PasswordStrength(["message" => "Ce mot de passe est trop vulnérable. Veuillez choisir un mot de passe plus sécurisé."])]
+    // TODO: allow triggering reset password process by admin
+    #[Assert\PasswordStrength(["message" => "Ce mot de passe est trop vulnérable. Veuillez choisir un mot de passe plus sécurisé."], minScore: Assert\PasswordStrength::STRENGTH_WEAK)]
     #[Assert\NotCompromisedPassword(message: "Ce mot de passe est présent dans une fuite de données connue. Veuillez en choisir un autre.", skipOnError: true)]
     #[Assert\Length(min: 12, max: 128, minMessage: "Ce mot de passe est trop court, il doit compter au moins {{ limit }} caractères", maxMessage: "Ce mot de passe est trop long, il ne doit pas dépasser {{ limit }} caractères")]
     #[Assert\NotBlank(message: "Un mot de passe est obligatoire", groups: ["postValidation"])]

@@ -33,6 +33,7 @@ security:
                 username_path: email
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
+            login_throttling: null
         token_refresh:
             pattern: ^/api/token/refresh$
             stateless: true
