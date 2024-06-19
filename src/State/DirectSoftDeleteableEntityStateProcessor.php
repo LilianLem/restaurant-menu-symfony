@@ -9,6 +9,7 @@ use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Interface\DirectSoftDeleteableEntityInterface;
 use App\Entity\Interface\RankedEntityInterface;
 use App\Entity\Interface\RankingEntityInterface;
+use App\Service\SoftDeleteableEntityService;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 use Override;
@@ -20,6 +21,7 @@ class DirectSoftDeleteableEntityStateProcessor implements ProcessorInterface
         #[Autowire(service: RemoveProcessor::class)] private ProcessorInterface $innerRemoveProcessor,
         #[Autowire(service: RankedEntityStateProcessor::class)] private ProcessorInterface $innerRankedEntityStateProcessor,
         #[Autowire(service: RankingEntityStateProcessor::class)] private ProcessorInterface $innerRankingEntityStateProcessor,
+        private SoftDeleteableEntityService $softDeleteableEntityService,
         private EntityManagerInterface $em
     )
     {
@@ -35,7 +37,7 @@ class DirectSoftDeleteableEntityStateProcessor implements ProcessorInterface
         }
 
         if(!$data->isDeleted()) {
-            $data->softDelete(true);
+            $this->softDeleteableEntityService->softDelete($data, true);
             $this->em->flush();
         }
 
