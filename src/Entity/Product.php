@@ -64,9 +64,9 @@ use Symfony\Component\Validator\Constraints as Assert;
     "sectionProducts.section.sectionMenu.menu.menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
 #[ApiFilter(BooleanFilter::class, properties: ["sectionProducts.visible"])]
-class Product implements OwnedEntityInterface, RankedEntityInterface
+class Product implements RankedEntityInterface, IndirectSoftDeleteableEntityInterface
 {
-    use TimestampableEntityTrait;
+    use OwnedEntityTrait, SoftDeleteableEntityTrait, TimestampableEntityTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -305,11 +305,6 @@ class Product implements OwnedEntityInterface, RankedEntityInterface
         );
     }
 
-    public function getOwner(): ?User
-    {
-        return $this->getProductSections()->first()->getOwner();
-    }
-
     public function getSectionForInit(): ?Section
     {
         return $this->sectionForInit;
@@ -359,5 +354,15 @@ class Product implements OwnedEntityInterface, RankedEntityInterface
     public function getUpdatedAt(): ?Carbon
     {
         return $this->updatedAt;
+    }
+
+    public function getChildren(): Collection
+    {
+        return $this->getVersions();
+    }
+
+    public function getParents(): Collection
+    {
+        return $this->getProductSections();
     }
 }

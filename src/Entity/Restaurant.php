@@ -16,6 +16,7 @@ use ApiPlatform\Metadata\Post;
 use App\Repository\RestaurantRepository;
 use App\Security\ApiSecurityExpressionDirectory;
 use App\State\RestaurantStateProcessor;
+use App\State\DirectSoftDeleteableEntityStateProcessor;
 use App\Validator as AppAssert;
 use Carbon\Carbon;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -54,7 +55,8 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Delete(
             // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation, and eventually force the restaurant to be in trash prior to deletion)
-            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER
+            security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER,
+            processor: DirectSoftDeleteableEntityStateProcessor::class
         ),
         new Patch(
             denormalizationContext: ["groups" => ["restaurant:write", "restaurant:write:update"]],
@@ -69,9 +71,10 @@ use Symfony\Component\Validator\Constraints as Assert;
     "restaurantMenus.menu.menuSections.section" => SearchFilter::STRATEGY_EXACT,
     "restaurantMenus.menu.menuSections.section.sectionProducts.product" => SearchFilter::STRATEGY_EXACT
 ])]
-class Restaurant implements OwnedEntityInterface
+#[Gedmo\SoftDeleteable(hardDelete: false)]
+class Restaurant implements OwnedEntityInterface, DirectSoftDeleteableEntityInterface
 {
-    use TimestampableEntityTrait;
+    use SoftDeleteableEntityTrait, TimestampableEntityTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -302,5 +305,15 @@ class Restaurant implements OwnedEntityInterface
     public function getUpdatedAt(): ?Carbon
     {
         return $this->updatedAt;
+    }
+
+    public function getChildren(): Collection
+    {
+        return $this->getRestaurantMenus();
+    }
+
+    public function getParents(): ?User
+    {
+        return $this->getOwner();
     }
 }

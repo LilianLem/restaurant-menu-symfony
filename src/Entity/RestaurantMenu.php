@@ -17,7 +17,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -48,9 +47,9 @@ use Symfony\Component\Validator\Constraints as Assert;
     denormalizationContext: ["groups" => ["restaurantMenu:write"]]
 )]
 #[AppAssert\CanRankingEntityBeDeleted(options: ["message" => "Ce menu n'est relié qu'à un seul restaurant. Veuillez supprimer le menu directement."], groups: ["self:delete"])]
-class RestaurantMenu implements OwnedEntityInterface, RankingEntityInterface
+class RestaurantMenu implements RankingEntityInterface, IndirectSoftDeleteableEntityInterface
 {
-    use TimestampableEntityTrait;
+    use OwnedEntityTrait, SoftDeleteableEntityTrait, TimestampableEntityTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -158,11 +157,6 @@ class RestaurantMenu implements OwnedEntityInterface, RankingEntityInterface
         return $this->getRestaurant()?->getMaxMenuRank() ?? null;
     }
 
-    public function getOwner(): ?User
-    {
-        return $this->getRestaurant()->getOwner();
-    }
-
     #[Groups(["up:menu:read", "menu:read", "restaurant:read:get", "restaurantMenu:read"])]
     #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     public function getCreatedAt(): ?Carbon
@@ -175,5 +169,15 @@ class RestaurantMenu implements OwnedEntityInterface, RankingEntityInterface
     public function getUpdatedAt(): ?Carbon
     {
         return $this->updatedAt;
+    }
+
+    public function getChildren(): ?Menu
+    {
+        return $this->getMenu();
+    }
+
+    public function getParents(): ?Restaurant
+    {
+        return $this->getRestaurant();
     }
 }

@@ -28,6 +28,13 @@ doctrine:
         dql:
             numeric_functions:
                 rand: DoctrineExtensions\Query\Mysql\Rand
+        filters:
+            softdeleteable:
+                class: Gedmo\SoftDeleteable\Filter\SoftDeleteableFilter
+                enabled: true
+            softdeleteable_indirect:
+                class: App\Doctrine\Filter\IndirectSoftDeleteableEntityFilter
+                enabled: true
 
 when@test:
     doctrine:

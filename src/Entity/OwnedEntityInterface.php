@@ -2,7 +2,7 @@
 
 namespace App\Entity;
 
-interface OwnedEntityInterface
+interface OwnedEntityInterface extends SoftDeleteableEntityInterface
 {
     public function getOwner(): ?User;
 }

@@ -17,7 +17,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -48,9 +47,9 @@ use Symfony\Component\Validator\Constraints as Assert;
     denormalizationContext: ["groups" => ["sectionProduct:write"]]
 )]
 #[AppAssert\CanRankingEntityBeDeleted(options: ["message" => "Ce produit n'est relié qu'à une seule section. Veuillez supprimer le produit directement."], groups: ["self:delete"])]
-class SectionProduct implements OwnedEntityInterface, RankingEntityInterface
+class SectionProduct implements RankingEntityInterface, IndirectSoftDeleteableEntityInterface
 {
-    use TimestampableEntityTrait;
+    use OwnedEntityTrait, SoftDeleteableEntityTrait, TimestampableEntityTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -158,11 +157,6 @@ class SectionProduct implements OwnedEntityInterface, RankingEntityInterface
         return $this;
     }
 
-    public function getOwner(): ?User
-    {
-        return $this->getSection()->getOwner();
-    }
-
     #[Groups(["up:product:read", "product:read", "section:read:get", "sectionProduct:read"])]
     #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     public function getCreatedAt(): ?Carbon
@@ -175,5 +169,15 @@ class SectionProduct implements OwnedEntityInterface, RankingEntityInterface
     public function getUpdatedAt(): ?Carbon
     {
         return $this->updatedAt;
+    }
+
+    public function getChildren(): ?Product
+    {
+        return $this->getProduct();
+    }
+
+    public function getParents(): ?Section
+    {
+        return $this->getSection();
     }
 }

@@ -15,12 +15,14 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\Repository\UserRepository;
 use App\Security\ApiSecurityExpressionDirectory;
+use App\State\DirectSoftDeleteableEntityStateProcessor;
 use App\State\UserHashPasswordProcessor;
 use App\Validator as AppAssert;
 use Carbon\Carbon;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -51,7 +53,8 @@ use Symfony\Component\Validator\Constraints as Assert;
             processor: UserHashPasswordProcessor::class
         ),
         new Delete(
-            security: 'is_granted("ROLE_ADMIN") and object !== user' // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation)
+            security: 'is_granted("ROLE_ADMIN") and object !== user and (is_granted("ROLE_SUPER_ADMIN") or not("ROLE_ADMIN" in object.roles or "ROLE_SUPER_ADMIN" in object.roles)', // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation in frontend)
+            processor: DirectSoftDeleteableEntityStateProcessor::class
         ),
         new Patch(
             denormalizationContext: ["groups" => ["user:write", "user:write:update"]],
@@ -62,9 +65,11 @@ use Symfony\Component\Validator\Constraints as Assert;
     normalizationContext: ["groups" => ["user:read"]],
     denormalizationContext: ["groups" => ["user:write"]]
 )]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+#[Gedmo\SoftDeleteable]
+class User implements UserInterface, PasswordAuthenticatedUserInterface, DirectSoftDeleteableEntityInterface
 {
     use TimestampableEntityTrait;
+    use SoftDeleteableEntityTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -288,5 +293,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getUpdatedAt(): ?Carbon
     {
         return $this->updatedAt;
+    }
+
+    public function getChildren(): Collection
+    {
+        return $this->getRestaurants();
+    }
+
+    public function getParents(): null
+    {
+        return null;
     }
 }

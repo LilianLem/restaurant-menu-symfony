@@ -14,7 +14,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -35,9 +34,9 @@ use Symfony\Component\Validator\Constraints as Assert;
     normalizationContext: ["groups" => ["menuSection:read", "menuSection:write"]],
     denormalizationContext: ["groups" => ["menuSection:write"]]
 )]
-class MenuSection implements OwnedEntityInterface, RankingEntityInterface
+class MenuSection implements RankingEntityInterface, IndirectSoftDeleteableEntityInterface
 {
-    use TimestampableEntityTrait;
+    use OwnedEntityTrait, SoftDeleteableEntityTrait, TimestampableEntityTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -143,11 +142,6 @@ class MenuSection implements OwnedEntityInterface, RankingEntityInterface
         return $this->getMenu()?->getMaxSectionRank() ?? null;
     }
 
-    public function getOwner(): ?User
-    {
-        return $this->getMenu()->getOwner();
-    }
-
     #[Groups(["up:section:read", "section:read", "menu:read:get", "menuSection:read"])]
     #[ApiProperty(security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER_OR_NULL_OBJECT)]
     public function getCreatedAt(): ?Carbon
@@ -160,5 +154,15 @@ class MenuSection implements OwnedEntityInterface, RankingEntityInterface
     public function getUpdatedAt(): ?Carbon
     {
         return $this->updatedAt;
+    }
+
+    public function getChildren(): Section
+    {
+        return $this->getSection();
+    }
+
+    public function getParents(): ?Menu
+    {
+        return $this->getMenu();
     }
 }

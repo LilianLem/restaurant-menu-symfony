@@ -4,7 +4,7 @@ namespace App\Entity;
 
 use Doctrine\Common\Collections\Collection;
 
-interface RankingEntityInterface
+interface RankingEntityInterface extends OwnedEntityInterface
 {
     public function getRank(): ?int;
 

@@ -19,7 +19,6 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
-use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Uid\Ulid;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -55,10 +54,9 @@ use Symfony\Component\Validator\Constraints as Assert;
     normalizationContext: ["groups" => ["productVersion:read", "product:read"]],
     denormalizationContext: ["groups" => ["productVersion:write"]],
 )]
-// TODO: add rank management
-class ProductVersion implements OwnedEntityInterface, RankingEntityInterface, RankedEntityInterface
+class ProductVersion implements RankingEntityInterface, RankedEntityInterface, IndirectSoftDeleteableEntityInterface
 {
-    use TimestampableEntityTrait;
+    use OwnedEntityTrait, SoftDeleteableEntityTrait, TimestampableEntityTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -160,11 +158,6 @@ class ProductVersion implements OwnedEntityInterface, RankingEntityInterface, Ra
         return $this->getProduct()->isPublic() && $this->isVisible();
     }
 
-    public function getOwner(): ?User
-    {
-        return $this->getProduct()->getOwner();
-    }
-
     public function getRankingEntities(): static
     {
         return $this;
@@ -210,5 +203,15 @@ class ProductVersion implements OwnedEntityInterface, RankingEntityInterface, Ra
     public function getUpdatedAt(): ?Carbon
     {
         return $this->updatedAt;
+    }
+
+    public function getChildren(): null
+    {
+        return null;
+    }
+
+    public function getParents(): ?Product
+    {
+        return $this->getProduct();
     }
 }

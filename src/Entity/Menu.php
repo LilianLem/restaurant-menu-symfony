@@ -17,7 +17,7 @@ use ApiPlatform\Metadata\Post;
 use App\Repository\MenuRepository;
 use App\Security\ApiSecurityExpressionDirectory;
 use App\State\MenuStateProcessor;
-use App\State\RankedEntityStateProcessor;
+use App\State\DirectSoftDeleteableEntityStateProcessor;
 use App\Validator as AppAssert;
 use Carbon\Carbon;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -49,7 +49,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Delete(
             security: ApiSecurityExpressionDirectory::ADMIN_OR_OWNER, // TODO: extra security to prevent deleting by mistake (user confirmation)
-            processor: RankedEntityStateProcessor::class
+            processor: DirectSoftDeleteableEntityStateProcessor::class
         ),
         new Patch(
             denormalizationContext: ["groups" => ["menu:write", "menu:write:update"]],
@@ -66,9 +66,10 @@ use Symfony\Component\Validator\Constraints as Assert;
     "menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
 #[ApiFilter(BooleanFilter::class, properties: ["menuRestaurants.visible"])]
-class Menu implements OwnedEntityInterface, RankedEntityInterface
+#[Gedmo\SoftDeleteable(hardDelete: false)]
+class Menu implements RankedEntityInterface, DirectSoftDeleteableEntityInterface
 {
-    use TimestampableEntityTrait;
+    use OwnedEntityTrait, SoftDeleteableEntityTrait, TimestampableEntityTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: "CUSTOM")]
@@ -346,11 +347,6 @@ class Menu implements OwnedEntityInterface, RankedEntityInterface
         );
     }
 
-    public function getOwner(): ?User
-    {
-        return $this->getMenuRestaurants()->first()->getOwner();
-    }
-
     public function getRestaurantForInit(): ?Restaurant
     {
         return $this->restaurantForInit;
@@ -387,5 +383,15 @@ class Menu implements OwnedEntityInterface, RankedEntityInterface
     public function getUpdatedAt(): ?Carbon
     {
         return $this->updatedAt;
+    }
+
+    public function getChildren(): Collection
+    {
+        return $this->getMenuSections();
+    }
+
+    public function getParents(): Collection
+    {
+        return $this->getMenuRestaurants();
     }
 }
