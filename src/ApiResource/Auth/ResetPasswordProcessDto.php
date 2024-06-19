@@ -4,24 +4,27 @@ namespace App\ApiResource\Auth;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model\Operation;
+use ApiPlatform\OpenApi\Model\RequestBody;
 use App\Entity\User;
 use App\Security\ApiSecurityExpressionDirectory;
 use App\State\Auth\ResetPasswordProcessStateProcessor;
+use ArrayObject;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Serializer\Attribute\SerializedName;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     operations: [
-        new Post()
+        new Post(status: 204)
     ],
     uriTemplate: "/reset-password/process",
-    openapiContext: [
-        "tags" => ["Authentication"],
-        "summary" => "Resets user password",
-        "description" => "",
-        "requestBody" => [
-            "content" => [
+    openapi: new Operation(
+        tags: ["Authentication"],
+        summary: "Resets user password",
+        description: "",
+        requestBody: new RequestBody(
+            content: new ArrayObject([
                 "application/json" => [
                     "schema" => [
                         "type" => "object",
@@ -31,9 +34,9 @@ use Symfony\Component\Validator\Constraints as Assert;
                         ]
                     ]
                 ]
-            ]
-        ],
-        "responses" => [
+            ])
+        ),
+        responses: [
             204 => [
                 "description" => "Password reset successful",
             ],
@@ -44,7 +47,7 @@ use Symfony\Component\Validator\Constraints as Assert;
                 "description" => "Unprocessable entity"
             ]
         ]
-    ],
+    ),
     security: ApiSecurityExpressionDirectory::ADMIN_OR_NOT_LOGGED,
     processor: ResetPasswordProcessStateProcessor::class
 )]
