@@ -2,7 +2,7 @@
 
 namespace App\Doctrine\Filter;
 
-use App\Entity\IndirectSoftDeleteableEntityInterface;
+use App\Entity\Interface\IndirectSoftDeleteableEntityInterface;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Query\Filter\SQLFilter;
 

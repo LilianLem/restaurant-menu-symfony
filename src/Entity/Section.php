@@ -14,6 +14,11 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use App\DataFixtures\SectionProductsFixturesData;
+use App\Entity\Interface\IndirectSoftDeleteableEntityInterface;
+use App\Entity\Interface\RankedEntityInterface;
+use App\Entity\Trait\OwnedEntityTrait;
+use App\Entity\Trait\SoftDeleteableEntityTrait;
+use App\Entity\Trait\TimestampableEntityTrait;
 use App\Repository\SectionRepository;
 use App\Security\ApiSecurityExpressionDirectory;
 use App\State\RankedEntityStateProcessor;
@@ -272,9 +277,9 @@ class Section implements RankedEntityInterface, IndirectSoftDeleteableEntityInte
         return $this->rankOnMenuForInit;
     }
 
-    public function setRankOnMenuForInit(int $rankOnmenuForInit): static
+    public function setRankOnMenuForInit(int $rankOnMenuForInit): static
     {
-        $this->rankOnMenuForInit = $rankOnmenuForInit;
+        $this->rankOnMenuForInit = $rankOnMenuForInit;
 
         return $this;
     }

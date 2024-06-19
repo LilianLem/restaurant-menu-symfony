@@ -8,7 +8,7 @@ use ApiPlatform\Metadata\DeleteOperationInterface;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
-use App\Entity\RankedEntityInterface;
+use App\Entity\Interface\RankedEntityInterface;
 use App\Service\RankedEntityService;
 use Doctrine\ORM\EntityManagerInterface;
 use Override;

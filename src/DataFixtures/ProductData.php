@@ -2,12 +2,12 @@
 
 namespace App\DataFixtures;
 
-class ProductData
+readonly class ProductData
 {
     public function __construct(
-        public readonly string $name,
-        public readonly ?int $price,
-        public readonly ?string $description = null
+        public string $name,
+        public ?int $price,
+        public ?string $description = null
     ) {
 
     }

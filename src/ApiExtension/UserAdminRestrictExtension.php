@@ -45,7 +45,7 @@ class UserAdminRestrictExtension implements QueryItemExtensionInterface
         $queryBuilder->andWhere(sprintf('%1$s.id = :user OR (%1$s.roles NOT LIKE :adminRole AND %1$s.roles NOT LIKE :sAdminRole)', $rootAlias))
             ->setParameter("user", $this->security->getUser()->getId(), UlidType::NAME)
             ->setParameter("adminRole", '%"ROLE_ADMIN"%')
-            ->setParameter("sAdminRole", '%"ROLE_SUPER_ADMIN"%');
+            ->setParameter("sAdminRole", '%"ROLE_SUPER_ADMIN"%')
         ;
     }
 }

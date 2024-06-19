@@ -2,7 +2,7 @@
 
 namespace App\Validator;
 
-use App\Entity\RankingEntityInterface;
+use App\Entity\Interface\RankingEntityInterface;
 use Doctrine\Common\Collections\Collection;
 use LogicException;
 use Symfony\Component\Validator\Constraint;

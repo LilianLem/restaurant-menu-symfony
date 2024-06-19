@@ -262,7 +262,7 @@ class ProductProvider extends Base
     {
         if(!is_null($minPrice) && !is_null($maxPrice)) {
             $this->checkPrices($minPrice, $maxPrice);
-        } elseif(is_null($minPrice) xor is_null($minPrice)) {
+        } elseif(is_null($minPrice) xor is_null($maxPrice)) {
             throw new Exception("Erreur : minPrice et maxPrice doivent avoir le même type (int ou null)");
         } else {
             $priceIsNull = true;

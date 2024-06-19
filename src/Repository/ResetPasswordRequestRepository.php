@@ -2,7 +2,7 @@
 
 namespace App\Repository;
 
-use App\Entity\ResetPasswordRequest;
+use App\Entity\Auth\ResetPasswordRequest;
 use App\Entity\User;
 use DateTimeInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;

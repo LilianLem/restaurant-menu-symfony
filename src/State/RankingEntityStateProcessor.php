@@ -10,7 +10,7 @@ use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\Validator\ValidatorInterface;
-use App\Entity\RankingEntityInterface;
+use App\Entity\Interface\RankingEntityInterface;
 use App\Service\RankingEntityService;
 use Doctrine\ORM\EntityManagerInterface;
 use Override;

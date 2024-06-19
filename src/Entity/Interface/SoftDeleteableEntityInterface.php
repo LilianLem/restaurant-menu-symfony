@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Interface;
 
+use App\Entity\User;
 use Carbon\Carbon;
 use Doctrine\Common\Collections\Collection;
 

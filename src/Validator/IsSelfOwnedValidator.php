@@ -2,7 +2,7 @@
 
 namespace App\Validator;
 
-use App\Entity\OwnedEntityInterface;
+use App\Entity\Interface\OwnedEntityInterface;
 use LogicException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Validator\Constraint;

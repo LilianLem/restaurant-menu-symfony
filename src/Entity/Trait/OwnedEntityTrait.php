@@ -1,7 +1,9 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Trait;
 
+use App\Entity\Interface\OwnedEntityInterface;
+use App\Entity\User;
 use Doctrine\Common\Collections\Collection;
 use Exception;
 

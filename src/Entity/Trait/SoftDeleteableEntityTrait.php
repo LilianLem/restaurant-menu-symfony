@@ -1,8 +1,11 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Trait;
 
 use ApiPlatform\Metadata\ApiProperty;
+use App\Entity\Interface\RankedEntityInterface;
+use App\Entity\Interface\RankingEntityInterface;
+use App\Entity\Interface\SoftDeleteableEntityInterface;
 use App\Security\ApiSecurityExpressionDirectory;
 use Carbon\Carbon;
 use Doctrine\Common\Collections\ArrayCollection;

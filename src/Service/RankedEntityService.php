@@ -2,8 +2,8 @@
 
 namespace App\Service;
 
-use App\Entity\RankedEntityInterface;
-use App\Entity\RankingEntityInterface;
+use App\Entity\Interface\RankedEntityInterface;
+use App\Entity\Interface\RankingEntityInterface;
 use Doctrine\Common\Collections\Collection;
 
 class RankedEntityService

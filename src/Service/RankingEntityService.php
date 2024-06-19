@@ -2,7 +2,7 @@
 
 namespace App\Service;
 
-use App\Entity\RankingEntityInterface;
+use App\Entity\Interface\RankingEntityInterface;
 
 class RankingEntityService
 {

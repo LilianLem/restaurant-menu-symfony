@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Trait;
 
 use Carbon\Carbon;
 use Doctrine\DBAL\Types\Types;
