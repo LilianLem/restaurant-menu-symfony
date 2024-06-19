@@ -7,7 +7,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use App\Entity\Interface\IndirectSoftDeleteableEntityInterface;
+use App\Entity\Interface\JoinEntityInterface;
 use App\Entity\Interface\RankingEntityInterface;
 use App\Entity\Trait\OwnedEntityTrait;
 use App\Entity\Trait\SoftDeleteableEntityTrait;
@@ -52,7 +52,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     denormalizationContext: ["groups" => ["sectionProduct:write"]]
 )]
 #[AppAssert\CanRankingEntityBeDeleted(options: ["message" => "Ce produit n'est relié qu'à une seule section. Veuillez supprimer le produit directement."], groups: ["self:delete"])]
-class SectionProduct implements RankingEntityInterface, IndirectSoftDeleteableEntityInterface
+class SectionProduct implements RankingEntityInterface, JoinEntityInterface
 {
     use OwnedEntityTrait, SoftDeleteableEntityTrait, TimestampableEntityTrait;
 

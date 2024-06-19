@@ -37,8 +37,6 @@ class DirectSoftDeleteableEntityStateProcessor implements ProcessorInterface
         if(!$data->isDeleted()) {
             $data->softDelete(true);
             $this->em->flush();
-
-            return $this->innerRemoveProcessor->process($data, $operation, $uriVariables, $context);
         }
 
         if($data instanceof RankingEntityInterface) {

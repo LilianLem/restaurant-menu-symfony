@@ -3,6 +3,8 @@
 namespace App\Entity\Trait;
 
 use ApiPlatform\Metadata\ApiProperty;
+use App\Entity\Interface\DirectSoftDeleteableEntityInterface;
+use App\Entity\Interface\JoinEntityInterface;
 use App\Entity\Interface\RankedEntityInterface;
 use App\Entity\Interface\RankingEntityInterface;
 use App\Entity\Interface\SoftDeleteableEntityInterface;
@@ -12,6 +14,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Exception;
 
 trait SoftDeleteableEntityTrait
 {
@@ -39,7 +42,7 @@ trait SoftDeleteableEntityTrait
         return $this->deletedAt !== null;
     }
 
-    public function softDelete(bool $handleParents = false): self
+    public function softDelete(bool $firstCall = false): self
     {
         if($this->isDeleted()) {
             return $this;
@@ -48,15 +51,18 @@ trait SoftDeleteableEntityTrait
         $this->setDeletedAt(new Carbon());
 
         $parents = $this->getParents();
-        if(
-            $handleParents &&
-            $parents instanceof Collection &&
-            $parents->count() &&
-            $parents->first() instanceof RankingEntityInterface
-        ) {
-            /** @var Collection<int, RankingEntityInterface> $parents */
-            foreach($parents as $parent) {
-                $parent->setDeletedAt(new Carbon());
+        if($firstCall) {
+            if($parents instanceof JoinEntityInterface) {
+                $parents->setDeletedAt(new Carbon());
+            } elseif(
+                $parents instanceof Collection &&
+                $parents->count() &&
+                $parents->first() instanceof JoinEntityInterface
+            ) {
+                /** @var Collection<int, JoinEntityInterface> $parents */
+                foreach($parents as $parent) {
+                    $parent->setDeletedAt(new Carbon());
+                }
             }
         }
 
@@ -67,6 +73,10 @@ trait SoftDeleteableEntityTrait
 
         if($children instanceof SoftDeleteableEntityInterface) {
             $children = new ArrayCollection([$children]);
+        }
+
+        if(!$children instanceof Collection) {
+            throw new Exception("An error occurred while processing deletion of an object! This should not happen. Please contact the developer.");
         }
 
         /** @var Collection<int, SoftDeleteableEntityInterface> $children */
@@ -94,6 +104,16 @@ trait SoftDeleteableEntityTrait
             }
 
             $child->softDelete();
+        }
+
+        if($firstCall && $this instanceof DirectSoftDeleteableEntityInterface) {
+            // Resets value to let internal Gedmo\SoftDeleteable functions handle it correctly
+            $this->setDeletedAt();
+
+            // Manually updates Timestampable field because it's not triggered otherwise
+            if(in_array(TimestampableEntityTrait::class, class_uses($this))) {
+                $this->setUpdatedAt(new Carbon());
+            }
         }
 
         return $this;

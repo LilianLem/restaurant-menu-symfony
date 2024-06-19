@@ -5,7 +5,7 @@ namespace App\Entity;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Patch;
-use App\Entity\Interface\IndirectSoftDeleteableEntityInterface;
+use App\Entity\Interface\JoinEntityInterface;
 use App\Entity\Interface\RankingEntityInterface;
 use App\Entity\Trait\OwnedEntityTrait;
 use App\Entity\Trait\SoftDeleteableEntityTrait;
@@ -39,7 +39,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     normalizationContext: ["groups" => ["menuSection:read", "menuSection:write"]],
     denormalizationContext: ["groups" => ["menuSection:write"]]
 )]
-class MenuSection implements RankingEntityInterface, IndirectSoftDeleteableEntityInterface
+class MenuSection implements RankingEntityInterface, JoinEntityInterface
 {
     use OwnedEntityTrait, SoftDeleteableEntityTrait, TimestampableEntityTrait;
 

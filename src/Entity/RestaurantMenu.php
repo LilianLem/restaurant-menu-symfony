@@ -7,7 +7,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use App\Entity\Interface\IndirectSoftDeleteableEntityInterface;
+use App\Entity\Interface\JoinEntityInterface;
 use App\Entity\Interface\RankingEntityInterface;
 use App\Entity\Trait\OwnedEntityTrait;
 use App\Entity\Trait\SoftDeleteableEntityTrait;
@@ -52,7 +52,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     denormalizationContext: ["groups" => ["restaurantMenu:write"]]
 )]
 #[AppAssert\CanRankingEntityBeDeleted(options: ["message" => "Ce menu n'est relié qu'à un seul restaurant. Veuillez supprimer le menu directement."], groups: ["self:delete"])]
-class RestaurantMenu implements RankingEntityInterface, IndirectSoftDeleteableEntityInterface
+class RestaurantMenu implements RankingEntityInterface, JoinEntityInterface
 {
     use OwnedEntityTrait, SoftDeleteableEntityTrait, TimestampableEntityTrait;
 
