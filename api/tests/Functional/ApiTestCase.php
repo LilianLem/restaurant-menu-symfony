@@ -36,7 +36,7 @@ abstract class ApiTestCase extends KernelTestCase
 
         $userEmail = $actingAs instanceof Proxy ? $actingAs->object()->getEmail() : $actingAs->getEmail();
 
-        $authResponse = $browser->post("/api/token", [
+        $authResponse = $browser->post("/token", [
             "json" => [
                 "email" => $userEmail,
                 "password" => UserFactory::DEFAULT_PASSWORD

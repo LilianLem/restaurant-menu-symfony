@@ -5,13 +5,13 @@ controllers:
     type: attribute
 
 api_login:
-    path: /api/token
+    path: /token
     methods: ["POST"]
 
 api_token_refresh:
-    path: /api/token/refresh
+    path: /token/refresh
     methods: ["POST"]
 
 api_token_invalidate:
-    path: /api/token/invalidate
+    path: /token/invalidate
     methods: ["GET","POST"]

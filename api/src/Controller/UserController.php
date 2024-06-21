@@ -16,7 +16,7 @@ use SymfonyCasts\Bundle\VerifyEmail\VerifyEmailHelperInterface;
 // TODO: allow sending a new verify email
 class UserController extends AbstractController
 {
-    // TODO: improvement: process entirely through API (frontend makes a POST request to /api/users/{id}/verify with GET parameters in the POST body)
+    // TODO: improvement: process entirely through API (frontend makes a POST request to /users/{id}/verify with GET parameters in the POST body)
     #[Route("/verify", name: "app_verify_email")]
     public function verifyUserEmail(Request $request, VerifyEmailHelperInterface $verifyEmailHelper, UserRepository $userRepository, EntityManagerInterface $em)
     {

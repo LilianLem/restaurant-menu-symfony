@@ -34,7 +34,7 @@ class UserResourceTest extends ApiTestCase
         // As guest
 
         $this->browser()
-            ->get("/api/users")
+            ->get("/users")
             ->assertJson()
             ->assertStatus(Response::HTTP_UNAUTHORIZED)
         ;
@@ -42,7 +42,7 @@ class UserResourceTest extends ApiTestCase
         // As user
 
         $this->browser(actingAs: $user)
-            ->get("/api/users")
+            ->get("/users")
             ->assertJson()
             ->assertStatus(Response::HTTP_FORBIDDEN)
         ;
@@ -52,7 +52,7 @@ class UserResourceTest extends ApiTestCase
         $admin = UserFactory::new()->asAdmin()->create();
 
         $json = $this->browser(actingAs: $admin)
-            ->get("/api/users")
+            ->get("/users")
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
             ->assertJsonMatches('"hydra:totalItems"', 10)
@@ -84,7 +84,7 @@ class UserResourceTest extends ApiTestCase
         // As guest
 
         $this->browser()
-            ->get("/api/users/".$user->getId())
+            ->get("/users/".$user->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_UNAUTHORIZED)
         ;
@@ -92,7 +92,7 @@ class UserResourceTest extends ApiTestCase
         // As user (self)
 
         $userData = $this->browser(actingAs: $user)
-            ->get("/api/users/".$user->getId())
+            ->get("/users/".$user->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
             ->json()->decoded()
@@ -114,7 +114,7 @@ class UserResourceTest extends ApiTestCase
         // As user (other)
 
         $this->browser(actingAs: $user2)
-            ->get("/api/users/".$user->getId())
+            ->get("/users/".$user->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_FORBIDDEN)
         ;
@@ -124,7 +124,7 @@ class UserResourceTest extends ApiTestCase
         $admin = UserFactory::new()->asAdmin()->create();
 
         $userData = $this->browser(actingAs: $admin)
-            ->get("/api/users/".$user->getId())
+            ->get("/users/".$user->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
             ->json()->decoded()
@@ -153,7 +153,7 @@ class UserResourceTest extends ApiTestCase
 
         // As guest
 
-        $browser = $this->browser()->post("/api/users", [
+        $browser = $this->browser()->post("/users", [
                 "json" => []
             ])
             ->assertJson()
@@ -163,7 +163,7 @@ class UserResourceTest extends ApiTestCase
         $email = UserFactory::generateEmail();
         $password = UserFactory::faker()->password(12, 128);
 
-        $browser->post("/api/users", [
+        $browser->post("/users", [
                 "json" => [
                     "email" => $email,
                     "password" => "password1234"
@@ -174,7 +174,7 @@ class UserResourceTest extends ApiTestCase
             ->assertJsonMatches('detail', "password: Ce mot de passe est trop vulnérable. Veuillez choisir un mot de passe plus sécurisé.")
         ;
 
-        $userData = $browser->post("/api/users", [
+        $userData = $browser->post("/users", [
                 "json" => [
                     "email" => $email,
                     "password" => $password,
@@ -211,7 +211,7 @@ class UserResourceTest extends ApiTestCase
         $this->assertSame(false, $userObject->isVerified());
 
         // Attempt to retrieve auth tokens while not verified
-        $browser->post("/api/token", [
+        $browser->post("/token", [
                 "json" => [
                     "email" => $email,
                     "password" => $password
@@ -233,7 +233,7 @@ class UserResourceTest extends ApiTestCase
         ;
 
         // Attempt to retrieve auth tokens after being verified
-        $tokens = $browser->post("/api/token", [
+        $tokens = $browser->post("/token", [
                 "json" => [
                     "email" => $email,
                     "password" => $password
@@ -259,7 +259,7 @@ class UserResourceTest extends ApiTestCase
         });
 
         // Trying to create a new account with same email as previously
-        $this->browser()->post("/api/users", [
+        $this->browser()->post("/users", [
                 "json" => [
                     "email" => $email,
                     "password" => $password
@@ -274,7 +274,7 @@ class UserResourceTest extends ApiTestCase
 
         $user = UserFactory::createOne();
         $this->browser(actingAs: $user)
-            ->post("/api/users", [
+            ->post("/users", [
                 "json" => []
             ])
             ->assertStatus(Response::HTTP_FORBIDDEN)
@@ -288,7 +288,7 @@ class UserResourceTest extends ApiTestCase
         $browser = $this->browser(actingAs: $admin);
 
         // Check that "classic" admins can't create another admin user
-        $browser->post("/api/users", [
+        $browser->post("/users", [
                 "json" => [
                     "email" => $email,
                     "password" => $password,
@@ -299,7 +299,7 @@ class UserResourceTest extends ApiTestCase
             ->assertJsonMatches('detail', "roles: Vous n'êtes pas autorisé à attribuer au moins l'un des rôles sélectionnés")
         ;
 
-        $userData = $browser->post("/api/users", [
+        $userData = $browser->post("/users", [
                 "json" => [
                     "email" => $email,
                     "password" => $password,
@@ -332,7 +332,7 @@ class UserResourceTest extends ApiTestCase
         );
 
         // Attempt to retrieve auth tokens while not enabled
-        $browser->post("/api/token", [
+        $browser->post("/token", [
                 "json" => [
                     "email" => $email,
                     "password" => $password
@@ -353,7 +353,7 @@ class UserResourceTest extends ApiTestCase
         $password = UserFactory::faker()->password(12, 128);
 
         $this->browser(actingAs: $superAdmin)
-            ->post("/api/users", [
+            ->post("/users", [
                 "json" => [
                     "email" => $email,
                     "password" => $password,
@@ -375,7 +375,7 @@ class UserResourceTest extends ApiTestCase
         // As guest
 
         $this->browser()
-            ->delete("/api/users/".$user->getId())
+            ->delete("/users/".$user->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_UNAUTHORIZED)
         ;
@@ -383,10 +383,10 @@ class UserResourceTest extends ApiTestCase
         // As normal user (self and other)
 
         $this->browser(actingAs: $user)
-            ->delete("/api/users/".$user->getId())
+            ->delete("/users/".$user->getId())
             ->assertStatus(Response::HTTP_FORBIDDEN)
 
-            ->delete("/api/users/".$user2->getId())
+            ->delete("/users/".$user2->getId())
             ->assertStatus(Response::HTTP_FORBIDDEN)
         ;
 
@@ -395,13 +395,13 @@ class UserResourceTest extends ApiTestCase
         $admin = UserFactory::new()->asAdmin()->create();
 
         $this->browser(actingAs: $admin)
-            ->delete("/api/users/".$admin->getId())
+            ->delete("/users/".$admin->getId())
             ->assertStatus(Response::HTTP_FORBIDDEN)
 
-            ->delete("/api/users/".$user->getId())
+            ->delete("/users/".$user->getId())
             ->assertStatus(Response::HTTP_NO_CONTENT)
 
-            ->delete("/api/users/".$user->getId())
+            ->delete("/users/".$user->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_NOT_FOUND)
         ;

@@ -33,7 +33,7 @@ class OpenApiFactory implements OpenApiFactoryInterface
             ]
         ];
 
-        $openApi->getPaths()->addPath("/api/token", new Model\PathItem(
+        $openApi->getPaths()->addPath("/token", new Model\PathItem(
             post: new Operation(
                 tags: ["Authentication"],
                 summary: "Generates an auth token",
@@ -66,7 +66,7 @@ class OpenApiFactory implements OpenApiFactoryInterface
             )
         ));
 
-        $openApi->getPaths()->addPath("/api/token/refresh", new Model\PathItem(
+        $openApi->getPaths()->addPath("/token/refresh", new Model\PathItem(
             post: new Operation(
                 tags: ["Authentication"],
                 summary: "Refreshes an auth token",
@@ -95,7 +95,7 @@ class OpenApiFactory implements OpenApiFactoryInterface
             )
         ));
 
-        $openApi->getPaths()->addPath("/api/token/invalidate", new Model\PathItem(
+        $openApi->getPaths()->addPath("/token/invalidate", new Model\PathItem(
             post: new Operation(
                 tags: ["Authentication"],
                 summary: "Logs out current user",

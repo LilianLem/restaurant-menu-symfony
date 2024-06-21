@@ -27,7 +27,7 @@ class RestaurantResourceTest extends ApiTestCase
         // As guest
 
         $this->browser()
-            ->get("/api/restaurants")
+            ->get("/restaurants")
             ->assertJson()
             ->assertStatus(Response::HTTP_UNAUTHORIZED)
         ;
@@ -35,7 +35,7 @@ class RestaurantResourceTest extends ApiTestCase
         // As normal user
 
         $json = $this->browser(actingAs: $user)
-            ->get("/api/restaurants")
+            ->get("/restaurants")
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
             ->assertJsonMatches('"hydra:totalItems"', 2)
@@ -66,7 +66,7 @@ class RestaurantResourceTest extends ApiTestCase
         // As admin
 
         $json = $this->browser(actingAs: $admin)
-            ->get("/api/restaurants")
+            ->get("/restaurants")
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
             ->assertJsonMatches('"hydra:totalItems"', 10)
@@ -115,13 +115,13 @@ class RestaurantResourceTest extends ApiTestCase
         // As guest
 
         $restaurant = $this->browser()
-            ->get("/api/restaurants/".$restaurantB->getId())
+            ->get("/restaurants/".$restaurantB->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_UNAUTHORIZED)
-            ->get("/api/restaurants/".$restaurantC->getId())
+            ->get("/restaurants/".$restaurantC->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_UNAUTHORIZED)
-            ->get("/api/restaurants/".$restaurantA->getId())
+            ->get("/restaurants/".$restaurantA->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
             ->json()->decoded()
@@ -145,13 +145,13 @@ class RestaurantResourceTest extends ApiTestCase
         // As normal user (owner)
 
         $restaurant = $this->browser(actingAs: $user)
-            ->get("/api/restaurants/".$restaurantB->getId())
+            ->get("/restaurants/".$restaurantB->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
-            ->get("/api/restaurants/".$restaurantC->getId())
+            ->get("/restaurants/".$restaurantC->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
-            ->get("/api/restaurants/".$restaurantA->getId())
+            ->get("/restaurants/".$restaurantA->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
             ->json()->decoded()
@@ -178,13 +178,13 @@ class RestaurantResourceTest extends ApiTestCase
         // As normal user (not owner)
 
         $restaurant = $this->browser(actingAs: $user2)
-            ->get("/api/restaurants/".$restaurantB->getId())
+            ->get("/restaurants/".$restaurantB->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_FORBIDDEN)
-            ->get("/api/restaurants/".$restaurantC->getId())
+            ->get("/restaurants/".$restaurantC->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_FORBIDDEN)
-            ->get("/api/restaurants/".$restaurantA->getId())
+            ->get("/restaurants/".$restaurantA->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
             ->json()->decoded()
@@ -210,13 +210,13 @@ class RestaurantResourceTest extends ApiTestCase
         $admin = UserFactory::new()->asAdmin()->create();
 
         $restaurant = $this->browser(actingAs: $admin)
-            ->get("/api/restaurants/".$restaurantB->getId())
+            ->get("/restaurants/".$restaurantB->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
-            ->get("/api/restaurants/".$restaurantC->getId())
+            ->get("/restaurants/".$restaurantC->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
-            ->get("/api/restaurants/".$restaurantA->getId())
+            ->get("/restaurants/".$restaurantA->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
             ->json()->decoded()
@@ -247,7 +247,7 @@ class RestaurantResourceTest extends ApiTestCase
         // As guest
 
         $this->browser()
-            ->post("/api/restaurants", [
+            ->post("/restaurants", [
                 "json" => []
             ])
             ->assertJson()
@@ -261,13 +261,13 @@ class RestaurantResourceTest extends ApiTestCase
         $admin = UserFactory::new()->asAdmin()->create();
 
         $browser = $this->browser(actingAs: $user)
-            ->post("/api/restaurants", [
+            ->post("/restaurants", [
                 "json" => []
             ])
             ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ;
 
-        $restaurant = $browser->post("/api/restaurants", [
+        $restaurant = $browser->post("/restaurants", [
                 "json" => [
                     "name" => "My new restaurant"
                 ]
@@ -298,11 +298,11 @@ class RestaurantResourceTest extends ApiTestCase
             ->get($restaurant["@id"])
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
-            ->assertJsonMatches('owner."@id"', "/api/users/".$user->getId())
+            ->assertJsonMatches('owner."@id"', "/users/".$user->getId())
         ;
 
         $this->browser(actingAs: $user)
-            ->post("/api/restaurants", [
+            ->post("/restaurants", [
                 "json" => [
                     "name" => "My new restaurant"
                 ]
@@ -313,10 +313,10 @@ class RestaurantResourceTest extends ApiTestCase
         ;
 
         // Check if owner field is ignored (it should only be processed if user is admin)
-        $restaurant = $browser->post("/api/restaurants", [
+        $restaurant = $browser->post("/restaurants", [
                 "json" => [
                     "name" => "My shiny restaurant",
-                    "owner" => "/api/users/".$user2->getId()
+                    "owner" => "/users/".$user2->getId()
                 ]
             ])
             ->assertJson()
@@ -327,26 +327,26 @@ class RestaurantResourceTest extends ApiTestCase
             ->get($restaurant["@id"])
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
-            ->assertJsonMatches('owner."@id"', "/api/users/".$user->getId())
+            ->assertJsonMatches('owner."@id"', "/users/".$user->getId())
         ;
 
         // As admin, on behalf of normal user
 
-        $browser->post("/api/restaurants", [
+        $browser->post("/restaurants", [
                 "json" => []
             ])
             ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
         ;
 
-        $restaurant = $browser->post("/api/restaurants", [
+        $restaurant = $browser->post("/restaurants", [
                 "json" => [
                     "name" => "My new restaurant 2",
-                    "owner" => "/api/users/".$user->getId()
+                    "owner" => "/users/".$user->getId()
                 ]
             ])
             ->assertJson()
             ->assertStatus(Response::HTTP_CREATED)
-            ->assertJsonMatches('owner', "/api/users/".$user->getId())
+            ->assertJsonMatches('owner', "/users/".$user->getId())
             ->json()->decoded()
         ;
 
@@ -379,7 +379,7 @@ class RestaurantResourceTest extends ApiTestCase
         // As guest
 
         $this->browser()
-            ->delete("/api/restaurants/".$restaurant->getId())
+            ->delete("/restaurants/".$restaurant->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_UNAUTHORIZED)
         ;
@@ -387,13 +387,13 @@ class RestaurantResourceTest extends ApiTestCase
         // As normal user
 
         $this->browser(actingAs: $user)
-            ->delete("/api/restaurants/".$restaurant2->getId())
+            ->delete("/restaurants/".$restaurant2->getId())
             ->assertStatus(Response::HTTP_FORBIDDEN)
 
-            ->delete("/api/restaurants/".$restaurant->getId())
+            ->delete("/restaurants/".$restaurant->getId())
             ->assertStatus(Response::HTTP_NO_CONTENT)
 
-            ->delete("/api/restaurants/".$restaurant->getId())
+            ->delete("/restaurants/".$restaurant->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_NOT_FOUND)
         ;
@@ -403,7 +403,7 @@ class RestaurantResourceTest extends ApiTestCase
         $admin = UserFactory::new()->asAdmin()->create();
 
         $this->browser(actingAs: $admin)
-            ->delete("/api/restaurants/".$restaurant2->getId())
+            ->delete("/restaurants/".$restaurant2->getId())
             ->assertStatus(Response::HTTP_NO_CONTENT)
         ;
     }
