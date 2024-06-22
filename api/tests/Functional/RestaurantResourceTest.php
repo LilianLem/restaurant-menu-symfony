@@ -6,7 +6,7 @@ use App\Entity\Restaurant;
 use App\Factory\RestaurantFactory;
 use App\Factory\UserFactory;
 use Symfony\Component\HttpFoundation\Response;
-use Zenstruck\Foundry\Proxy;
+use Zenstruck\Foundry\Persistence\Proxy;
 use Zenstruck\Foundry\Test\ResetDatabase;
 
 class RestaurantResourceTest extends ApiTestCase

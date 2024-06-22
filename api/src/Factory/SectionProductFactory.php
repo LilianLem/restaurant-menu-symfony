@@ -5,7 +5,7 @@ namespace App\Factory;
 use App\Entity\SectionProduct;
 use App\Repository\SectionProductRepository;
 use Zenstruck\Foundry\ModelFactory;
-use Zenstruck\Foundry\Proxy;
+use Zenstruck\Foundry\Persistence\Proxy;
 use Zenstruck\Foundry\RepositoryProxy;
 
 /**

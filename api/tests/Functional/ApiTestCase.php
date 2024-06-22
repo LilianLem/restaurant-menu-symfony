@@ -7,9 +7,8 @@ use App\Factory\UserFactory;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\BrowserKit\CookieJar;
 use Zenstruck\Browser\HttpOptions;
-use Zenstruck\Browser\KernelBrowser;
 use Zenstruck\Browser\Test\HasBrowser;
-use Zenstruck\Foundry\Proxy;
+use Zenstruck\Foundry\Persistence\Proxy;
 
 abstract class ApiTestCase extends KernelTestCase
 {
@@ -34,7 +33,7 @@ abstract class ApiTestCase extends KernelTestCase
             return $browser;
         }
 
-        $userEmail = $actingAs instanceof Proxy ? $actingAs->object()->getEmail() : $actingAs->getEmail();
+        $userEmail = $actingAs instanceof Proxy ? $actingAs->_real()->getEmail() : $actingAs->getEmail();
 
         $authResponse = $browser->post("/token", [
             "json" => [

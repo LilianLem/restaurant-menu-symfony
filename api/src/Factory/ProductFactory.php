@@ -11,7 +11,7 @@ use Exception;
 use JetBrains\PhpStorm\ExpectedValues;
 use Psr\Log\LoggerInterface;
 use Zenstruck\Foundry\ModelFactory;
-use Zenstruck\Foundry\Proxy;
+use Zenstruck\Foundry\Persistence\Proxy;
 use Zenstruck\Foundry\RepositoryProxy;
 
 /**

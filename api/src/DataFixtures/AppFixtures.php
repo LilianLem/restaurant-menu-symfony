@@ -76,18 +76,35 @@ class AppFixtures extends Fixture
     {
         $this->manager = $manager;
 
-        UserFactory::new()
+        $sadminFactory = UserFactory::new()
             ->asSuperAdmin()
-            ->create()
         ;
 
-        UserFactory::new()
+        $sadminFactory->create([
+            "email" => "sadmin@rmsymfdev.tk"
+        ]);
+        $sadminFactory->create();
+
+        $adminFactory = UserFactory::new()
             ->asAdmin()
-            ->create()
         ;
+
+        $adminFactory->create([
+            "email" => "admin@rmsymfdev.tk"
+        ]);
+        $adminFactory->create();
 
         /** @var array<Proxy<User>> $normalUsers */
-        $normalUsers = UserFactory::createMany(20);
+        $normalUsers = [];
+
+        array_push(
+            $normalUsers,
+            UserFactory::createOne([
+                "email" => "user@rmsymfdev.tk",
+                "verified" => true
+            ]),
+            ...UserFactory::createMany(19)
+        );
 
         $usersWithRestaurants = 0;
         foreach($normalUsers as $user) {

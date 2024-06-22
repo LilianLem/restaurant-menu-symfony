@@ -15,6 +15,7 @@
         <server name="SHELL_VERBOSITY" value="-1" />
         <server name="SYMFONY_PHPUNIT_REMOVE" value="" />
         <server name="SYMFONY_PHPUNIT_VERSION" value="9.6" />
+        <!-- Use PHP command instead of Symfony one to prevent problems with env variables (Symfony command does not seem to read .env.test.local content...) -->
     </php>
 
     <testsuites>
