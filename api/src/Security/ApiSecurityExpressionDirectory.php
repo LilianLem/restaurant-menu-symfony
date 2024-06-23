@@ -20,4 +20,7 @@ abstract class ApiSecurityExpressionDirectory
 
     /** Used mainly for alternative "public" collection fields that replace original ones when user doesn't have full rights on the object (that collection is filtered using a custom method instead of the main getter) */
     public const string NOT_ADMIN_NOR_OWNER_AND_NOT_NULL_OBJECT = 'not(is_granted("ROLE_ADMIN")) and object !== null and object.getOwner() !== user';
+
+    /** This expression should only be used for temporary property removals */
+    public const string NEVER = '1 === 0';
 }

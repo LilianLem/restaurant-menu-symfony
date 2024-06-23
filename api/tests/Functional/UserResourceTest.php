@@ -61,7 +61,6 @@ class UserResourceTest extends ApiTestCase
         $users = $json["hydra:member"];
 
         $this->assertSame(
-            array_keys($users[0]),
             [
                 "@id",
                 "@type",
@@ -70,8 +69,11 @@ class UserResourceTest extends ApiTestCase
                 "roles",
                 "restaurants",
                 "enabled",
-                "verified"
+                "verified",
+                "createdAt",
+                "updatedAt"
             ],
+            array_keys($users[0]),
             "User keys are not matching when connected as admin"
         );
     }
@@ -99,15 +101,17 @@ class UserResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($userData),
             [
                 "@context",
                 "@id",
                 "@type",
                 "id",
                 "email",
-                "restaurants"
+                "restaurants",
+                "createdAt",
+                "updatedAt"
             ],
+            array_keys($userData),
             "User keys are not matching when connected as normal user (self)"
         );
 
@@ -131,7 +135,6 @@ class UserResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($userData),
             [
                 "@context",
                 "@id",
@@ -141,8 +144,11 @@ class UserResourceTest extends ApiTestCase
                 "roles",
                 "restaurants",
                 "enabled",
-                "verified"
+                "verified",
+                "createdAt",
+                "updatedAt"
             ],
+            array_keys($userData),
             "User keys are not matching when connected as admin"
         );
     }
@@ -166,7 +172,7 @@ class UserResourceTest extends ApiTestCase
         $browser->post("/users", [
                 "json" => [
                     "email" => $email,
-                    "password" => "password1234"
+                    "password" => "qwertyuiopqs"
                 ]
             ])
             ->assertJson()
@@ -190,15 +196,17 @@ class UserResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($userData),
             [
                 "@context",
                 "@id",
                 "@type",
                 "id",
                 "email",
-                "restaurants"
+                "restaurants",
+                "createdAt",
+                "updatedAt"
             ],
+            array_keys($userData),
             "User keys are not matching when posting as guest"
         );
 
@@ -245,11 +253,11 @@ class UserResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($tokens),
             [
                 "token",
                 "refreshToken"
             ],
+            array_keys($tokens),
             "Tokens request fields are incorrect"
         );
 
@@ -272,7 +280,7 @@ class UserResourceTest extends ApiTestCase
 
         // As normal user
 
-        $user = UserFactory::createOne();
+        $user = UserFactory::createOne(["verified" => true]);
         $this->browser(actingAs: $user)
             ->post("/users", [
                 "json" => []
@@ -316,7 +324,6 @@ class UserResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($userData),
             [
                 "@context",
                 "@id",
@@ -326,8 +333,11 @@ class UserResourceTest extends ApiTestCase
                 "roles",
                 "restaurants",
                 "enabled",
-                "verified"
+                "verified",
+                "createdAt",
+                "updatedAt"
             ],
+            array_keys($userData),
             "User keys are not matching when posting as admin"
         );
 
@@ -343,8 +353,6 @@ class UserResourceTest extends ApiTestCase
             ->assertJsonMatches('message', "Ce compte est actuellement désactivé. Veuillez nous contacter pour plus d'informations.")
             ->json()->decoded()
         ;
-
-
 
         // As super-admin
 
@@ -367,7 +375,7 @@ class UserResourceTest extends ApiTestCase
         ;
     }
 
-    public function testHardDeleteUser(): void
+    public function testSoftDeleteUser(): void
     {
         $user = UserFactory::createOne(["verified" => true]);
         $user2 = UserFactory::createOne(["verified" => true]);

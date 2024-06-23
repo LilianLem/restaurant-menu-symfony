@@ -14,8 +14,8 @@ class RestaurantResourceTest extends ApiTestCase
 
     public function testGetCollectionOfRestaurants(): void
     {
-        RestaurantFactory::createMany(8, ["owner" => UserFactory::createOne()]);
-        $user = UserFactory::createOne();
+        RestaurantFactory::createMany(8, ["owner" => UserFactory::createOne(["verified" => true])]);
+        $user = UserFactory::createOne(["verified" => true]);
         $ownedRestaurants = RestaurantFactory::createMany(2, ["owner" => $user]);
 
         /** @var Restaurant $restaurant */
@@ -43,18 +43,21 @@ class RestaurantResourceTest extends ApiTestCase
         $restaurants = $json["hydra:member"];
 
         $this->assertSame(
-            array_keys($restaurants[0]),
             [
                 "@id",
                 "@type",
                 "id",
                 "name",
-                "logo",
+                //"logo",
                 "visible",
                 "description",
+                "slug",
                 "restaurantMenus",
-                "inTrash"
+                "inTrash",
+                "createdAt",
+                "updatedAt"
             ],
+            array_keys($restaurants[0]),
             "Restaurant keys are not matching when connected as normal user"
         );
 
@@ -74,19 +77,22 @@ class RestaurantResourceTest extends ApiTestCase
         $restaurants = $json["hydra:member"];
 
         $this->assertSame(
-            array_keys($restaurants[0]),
             [
                 "@id",
                 "@type",
                 "id",
                 "name",
-                "logo",
+                //"logo",
                 "visible",
                 "description",
+                "slug",
                 "restaurantMenus",
                 "owner",
-                "inTrash"
+                "inTrash",
+                "createdAt",
+                "updatedAt"
             ],
+            array_keys($restaurants[0]),
             "Restaurant keys are not matching when connected as admin"
         );
     }
@@ -127,17 +133,18 @@ class RestaurantResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($restaurant),
             [
                 "@context",
                 "@id",
                 "@type",
                 "id",
                 "name",
-                "logo",
+                //"logo",
                 "description",
+                "slug",
                 "restaurantMenus"
             ],
+            array_keys($restaurant),
             "Restaurant keys are not matching when requesting as guest"
         );
 
@@ -157,20 +164,23 @@ class RestaurantResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($restaurant),
             [
                 "@context",
                 "@id",
                 "@type",
                 "id",
                 "name",
-                "logo",
+                //"logo",
                 "visible",
                 "description",
+                "slug",
                 "restaurantMenus",
                 "inTrash",
+                "createdAt",
+                "updatedAt",
                 "maxMenuRank"
             ],
+            array_keys($restaurant),
             "Restaurant keys are not matching when connected as normal user (owner)"
         );
 
@@ -190,17 +200,18 @@ class RestaurantResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($restaurant),
             [
                 "@context",
                 "@id",
                 "@type",
                 "id",
                 "name",
-                "logo",
+                //"logo",
                 "description",
+                "slug",
                 "restaurantMenus"
             ],
+            array_keys($restaurant),
             "Restaurant keys are not matching when requesting as normal user (not owner)"
         );
 
@@ -222,21 +233,24 @@ class RestaurantResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($restaurant),
             [
                 "@context",
                 "@id",
                 "@type",
                 "id",
                 "name",
-                "logo",
+                //"logo",
                 "visible",
                 "description",
+                "slug",
                 "restaurantMenus",
                 "owner",
                 "inTrash",
+                "createdAt",
+                "updatedAt",
                 "maxMenuRank"
             ],
+            array_keys($restaurant),
             "Restaurant keys are not matching when connected as admin"
         );
     }
@@ -255,8 +269,8 @@ class RestaurantResourceTest extends ApiTestCase
 
         // As normal user
 
-        $user = UserFactory::createOne();
-        $user2 = UserFactory::createOne();
+        $user = UserFactory::createOne(["verified" => true]);
+        $user2 = UserFactory::createOne(["verified" => true]);
         $admin = UserFactory::new()->asAdmin()->create();
 
         $browser = $this->browser(actingAs: $user)
@@ -277,19 +291,22 @@ class RestaurantResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($restaurant),
             [
                 "@context",
                 "@id",
                 "@type",
                 "id",
                 "name",
-                "logo",
+                //"logo",
                 "visible",
                 "description",
+                "slug",
                 "restaurantMenus",
-                "inTrash"
+                "inTrash",
+                "createdAt",
+                "updatedAt"
             ],
+            array_keys($restaurant),
             "Restaurant keys are not matching when posting as normal user"
         );
 
@@ -350,29 +367,32 @@ class RestaurantResourceTest extends ApiTestCase
         ;
 
         $this->assertSame(
-            array_keys($restaurant),
             [
                 "@context",
                 "@id",
                 "@type",
                 "id",
                 "name",
-                "logo",
+                //"logo",
                 "visible",
                 "description",
+                "slug",
                 "restaurantMenus",
                 "owner",
-                "inTrash"
+                "inTrash",
+                "createdAt",
+                "updatedAt"
             ],
+            array_keys($restaurant),
             "Restaurant keys are not matching when posting as admin"
         );
     }
 
-    public function testDeleteRestaurant(): void
+    public function testSoftDeleteRestaurant(): void
     {
-        $user = UserFactory::createOne();
+        $user = UserFactory::createOne(["verified" => true]);
         $restaurant = RestaurantFactory::createOne(["owner" => $user]);
-        $user2 = UserFactory::createOne();
+        $user2 = UserFactory::createOne(["verified" => true]);
         $restaurant2 = RestaurantFactory::createOne(["owner" => $user2]);
 
         // As guest

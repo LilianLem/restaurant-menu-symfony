@@ -96,8 +96,9 @@ class Restaurant implements OwnedEntityInterface, DirectSoftDeleteableEntityInte
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255, maxMessage: "Le lien vers le logo ne doit pas dépasser {{ limit }} caractères")]
-    #[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])]
+    ##[Groups(["restaurant:read", "restaurant:write", "up:menu:read"])] TODO: handle logos
     #[ApiFilter(ExistsFilter::class)]
+    #[ApiProperty(security: ApiSecurityExpressionDirectory::NEVER)] // Remove security when field will be ready
     private ?string $logo = null;
 
     #[ORM\Column(options: ["default" => false])]

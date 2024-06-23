@@ -56,12 +56,12 @@ use Symfony\Component\Validator\Constraints as Assert;
             processor: UserHashPasswordProcessor::class
         ),
         new Delete(
-            security: 'is_granted("ROLE_ADMIN") and object !== user and (is_granted("ROLE_SUPER_ADMIN") or not("ROLE_ADMIN" in object.roles or "ROLE_SUPER_ADMIN" in object.roles)', // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation in frontend)
+            security: 'is_granted("ROLE_ADMIN") and object !== user and (is_granted("ROLE_SUPER_ADMIN") or not("ROLE_ADMIN" in object.getRoles() or "ROLE_SUPER_ADMIN" in object.getRoles()))', // TODO: extra security to prevent deleting by mistake (strong auth + user confirmation in frontend)
             processor: DirectSoftDeleteableEntityStateProcessor::class
         ),
         new Patch(
             denormalizationContext: ["groups" => ["user:write", "user:write:update"]],
-            security: 'is_granted("ROLE_ADMIN") or object === user',
+            security: 'object === user or (is_granted("ROLE_ADMIN") and (is_granted("ROLE_SUPER_ADMIN") or not("ROLE_ADMIN" in object.getRoles() or "ROLE_SUPER_ADMIN" in object.getRoles())))',
             processor: UserHashPasswordProcessor::class
         )
     ],
