@@ -3,31 +3,28 @@
 namespace App\Factory;
 
 use App\Entity\MenuSection;
-use App\Repository\MenuSectionRepository;
-use Zenstruck\Foundry\ModelFactory;
-use Zenstruck\Foundry\Persistence\Proxy;
-use Zenstruck\Foundry\RepositoryProxy;
+use Zenstruck\Foundry\Persistence\RepositoryDecorator;
 
 /**
- * @extends ModelFactory<MenuSection>
+ * @extends PersistentObjectFactory<MenuSection>
  *
- * @method        MenuSection|Proxy                     create(array|callable $attributes = [])
- * @method static MenuSection|Proxy                     createOne(array $attributes = [])
- * @method static MenuSection|Proxy                     find(object|array|mixed $criteria)
- * @method static MenuSection|Proxy                     findOrCreate(array $attributes)
- * @method static MenuSection|Proxy                     first(string $sortedField = 'id')
- * @method static MenuSection|Proxy                     last(string $sortedField = 'id')
- * @method static MenuSection|Proxy                     random(array $attributes = [])
- * @method static MenuSection|Proxy                     randomOrCreate(array $attributes = [])
- * @method static MenuSectionRepository|RepositoryProxy repository()
- * @method static MenuSection[]|Proxy[]                 all()
- * @method static MenuSection[]|Proxy[]                 createMany(int $number, array|callable $attributes = [])
- * @method static MenuSection[]|Proxy[]                 createSequence(iterable|callable $sequence)
- * @method static MenuSection[]|Proxy[]                 findBy(array $attributes)
- * @method static MenuSection[]|Proxy[]                 randomRange(int $min, int $max, array $attributes = [])
- * @method static MenuSection[]|Proxy[]                 randomSet(int $number, array $attributes = [])
+ * @method        MenuSection                      create(array|callable $attributes = [])
+ * @method static MenuSection                      createOne(array $attributes = [])
+ * @method static MenuSection                      find(object|array|mixed $criteria)
+ * @method static MenuSection                      findOrCreate(array $attributes)
+ * @method static MenuSection                      first(string $sortedField = 'id')
+ * @method static MenuSection                      last(string $sortedField = 'id')
+ * @method static MenuSection                      random(array $attributes = [])
+ * @method static MenuSection                      randomOrCreate(array $attributes = [])
+ * @method static RepositoryDecorator<MenuSection> repository()
+ * @method static MenuSection[]                    all()
+ * @method static MenuSection[]                    createMany(int $number, array|callable $attributes = [])
+ * @method static MenuSection[]                    createSequence(iterable|callable $sequence)
+ * @method static MenuSection[]                    findBy(array $attributes)
+ * @method static MenuSection[]                    randomRange(int $min, int $max, array $attributes = [])
+ * @method static MenuSection[]                    randomSet(int $number, array $attributes = [])
  */
-final class MenuSectionFactory extends ModelFactory
+final class MenuSectionFactory extends PersistentObjectFactory
 {
     /**
      * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#factories-as-services
@@ -41,7 +38,7 @@ final class MenuSectionFactory extends ModelFactory
      * Other values than visible can't have defaults because they need to be set in their own restaurant context
      * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#model-factories
      */
-    protected function getDefaults(): array
+    protected function defaults(): array|callable
     {
         return [
             'visible' => self::faker()->boolean(80),
@@ -51,14 +48,14 @@ final class MenuSectionFactory extends ModelFactory
     /**
      * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#initialization
      */
-    protected function initialize(): self
+    protected function initialize(): static
     {
         return $this
             // ->afterInstantiate(function(MenuSection $menuSection): void {})
         ;
     }
 
-    protected static function getClass(): string
+    public static function class(): string
     {
         return MenuSection::class;
     }

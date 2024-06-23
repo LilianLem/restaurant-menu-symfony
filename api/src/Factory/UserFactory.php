@@ -3,34 +3,31 @@
 namespace App\Factory;
 
 use App\Entity\User;
-use App\Repository\UserRepository;
 use Exception;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\String\ByteString;
-use Zenstruck\Foundry\ModelFactory;
-use Zenstruck\Foundry\Persistence\Proxy;
-use Zenstruck\Foundry\RepositoryProxy;
+use Zenstruck\Foundry\Persistence\RepositoryDecorator;
 
 /**
- * @extends ModelFactory<User>
+ * @extends PersistentObjectFactory<User>
  *
- * @method        User|Proxy                     create(array|callable $attributes = [])
- * @method static User|Proxy                     createOne(array $attributes = [])
- * @method static User|Proxy                     find(object|array|mixed $criteria)
- * @method static User|Proxy                     findOrCreate(array $attributes)
- * @method static User|Proxy                     first(string $sortedField = 'id')
- * @method static User|Proxy                     last(string $sortedField = 'id')
- * @method static User|Proxy                     random(array $attributes = [])
- * @method static User|Proxy                     randomOrCreate(array $attributes = [])
- * @method static UserRepository|RepositoryProxy repository()
- * @method static User[]|Proxy[]                 all()
- * @method static User[]|Proxy[]                 createMany(int $number, array|callable $attributes = [])
- * @method static User[]|Proxy[]                 createSequence(iterable|callable $sequence)
- * @method static User[]|Proxy[]                 findBy(array $attributes)
- * @method static User[]|Proxy[]                 randomRange(int $min, int $max, array $attributes = [])
- * @method static User[]|Proxy[]                 randomSet(int $number, array $attributes = [])
+ * @method        User                      create(array|callable $attributes = [])
+ * @method static User                      createOne(array $attributes = [])
+ * @method static User                      find(object|array|mixed $criteria)
+ * @method static User                      findOrCreate(array $attributes)
+ * @method static User                      first(string $sortedField = 'id')
+ * @method static User                      last(string $sortedField = 'id')
+ * @method static User                      random(array $attributes = [])
+ * @method static User                      randomOrCreate(array $attributes = [])
+ * @method static RepositoryDecorator<User> repository()
+ * @method static User[]                    all()
+ * @method static User[]                    createMany(int $number, array|callable $attributes = [])
+ * @method static User[]                    createSequence(iterable|callable $sequence)
+ * @method static User[]                    findBy(array $attributes)
+ * @method static User[]                    randomRange(int $min, int $max, array $attributes = [])
+ * @method static User[]                    randomSet(int $number, array $attributes = [])
  */
-final class UserFactory extends ModelFactory
+final class UserFactory extends PersistentObjectFactory
 {
     public const string DEFAULT_PASSWORD = "password";
 
@@ -47,7 +44,7 @@ final class UserFactory extends ModelFactory
     /**
      * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#model-factories
      */
-    protected function getDefaults(): array
+    protected function defaults(): array|callable
     {
         return [
             'email' => self::generateEmail(),
@@ -61,7 +58,7 @@ final class UserFactory extends ModelFactory
 
     public function asAdmin(): static
     {
-        return $this->addState([
+        return $this->with([
             "email" => self::generateEmail("admin"),
             "roles" => ["ROLE_ADMIN"],
             "verified" => true
@@ -70,7 +67,7 @@ final class UserFactory extends ModelFactory
 
     public function asSuperAdmin(): static
     {
-        return $this->addState([
+        return $this->with([
             "email" => self::generateEmail("sadmin"),
             "roles" => ["ROLE_SUPER_ADMIN"],
             "verified" => true
@@ -85,7 +82,7 @@ final class UserFactory extends ModelFactory
     /**
      * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#initialization
      */
-    protected function initialize(): self
+    protected function initialize(): static
     {
         return $this
             ->afterInstantiate(function(User $user): void {
@@ -94,13 +91,13 @@ final class UserFactory extends ModelFactory
         ;
     }
 
-    protected static function getClass(): string
+    public static function class(): string
     {
         return User::class;
     }
 
-    /** @return User|Proxy<User> */
-    public static function randomNormalUser(): User|Proxy
+    /** @return User */
+    public static function randomNormalUser(): User
     {
         $qb = self::repository()->createQueryBuilder("u");
         $qb->where("u.roles = '[\"ROLE_USER\"]'")
@@ -108,7 +105,7 @@ final class UserFactory extends ModelFactory
             ->setMaxResults(1)
         ;
 
-        /** @var User[]|array<Proxy<User>> $result */
+        /** @var User[] $result */
         $result = $qb->getQuery()->getResult();
 
         if(!$result) {

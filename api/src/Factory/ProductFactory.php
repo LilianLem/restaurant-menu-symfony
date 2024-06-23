@@ -5,35 +5,32 @@ namespace App\Factory;
 use App\DataFixtures\ProductData;
 use App\DataFixtures\SectionProductsFixturesData;
 use App\Entity\Product;
-use App\Repository\ProductRepository;
 use Closure;
 use Exception;
 use JetBrains\PhpStorm\ExpectedValues;
 use Psr\Log\LoggerInterface;
-use Zenstruck\Foundry\ModelFactory;
-use Zenstruck\Foundry\Persistence\Proxy;
-use Zenstruck\Foundry\RepositoryProxy;
+use Zenstruck\Foundry\Persistence\RepositoryDecorator;
 
 /**
- * @extends ModelFactory<Product>
+ * @extends PersistentObjectFactory<Product>
  *
- * @method        Product|Proxy                     create(array|callable $attributes = [])
- * @method static Product|Proxy                     createOne(array $attributes = [])
- * @method static Product|Proxy                     find(object|array|mixed $criteria)
- * @method static Product|Proxy                     findOrCreate(array $attributes)
- * @method static Product|Proxy                     first(string $sortedField = 'id')
- * @method static Product|Proxy                     last(string $sortedField = 'id')
- * @method static Product|Proxy                     random(array $attributes = [])
- * @method static Product|Proxy                     randomOrCreate(array $attributes = [])
- * @method static ProductRepository|RepositoryProxy repository()
- * @method static Product[]|Proxy[]                 all()
- * @method static Product[]|Proxy[]                 createMany(int $number, array|callable $attributes = [])
- * @method static Product[]|Proxy[]                 createSequence(iterable|callable $sequence)
- * @method static Product[]|Proxy[]                 findBy(array $attributes)
- * @method static Product[]|Proxy[]                 randomRange(int $min, int $max, array $attributes = [])
- * @method static Product[]|Proxy[]                 randomSet(int $number, array $attributes = [])
+ * @method        Product                      create(array|callable $attributes = [])
+ * @method static Product                      createOne(array $attributes = [])
+ * @method static Product                      find(object|array|mixed $criteria)
+ * @method static Product                      findOrCreate(array $attributes)
+ * @method static Product                      first(string $sortedField = 'id')
+ * @method static Product                      last(string $sortedField = 'id')
+ * @method static Product                      random(array $attributes = [])
+ * @method static Product                      randomOrCreate(array $attributes = [])
+ * @method static RepositoryDecorator<Product> repository()
+ * @method static Product[]                    all()
+ * @method static Product[]                    createMany(int $number, array|callable $attributes = [])
+ * @method static Product[]                    createSequence(iterable|callable $sequence)
+ * @method static Product[]                    findBy(array $attributes)
+ * @method static Product[]                    randomRange(int $min, int $max, array $attributes = [])
+ * @method static Product[]                    randomSet(int $number, array $attributes = [])
  */
-final class ProductFactory extends ModelFactory
+final class ProductFactory extends PersistentObjectFactory
 {
     /** @var Closure(): ProductData $productsTypeDefaultsGenerator */
     private static ?Closure $productsTypeDefaultsGenerator = null;
@@ -49,7 +46,7 @@ final class ProductFactory extends ModelFactory
     /**
      * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#model-factories
      */
-    protected function getDefaults(): array
+    protected function defaults(): array|callable
     {
         if(self::$productsTypeDefaultsGenerator) {
             return self::getProductsTypeDefaults();
@@ -93,14 +90,14 @@ final class ProductFactory extends ModelFactory
     /**
      * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#initialization
      */
-    protected function initialize(): self
+    protected function initialize(): static
     {
         return $this
             // ->afterInstantiate(function(Product $product): void {})
         ;
     }
 
-    protected static function getClass(): string
+    public static function class(): string
     {
         return Product::class;
     }

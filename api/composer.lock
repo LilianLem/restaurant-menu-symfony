@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7f3170594f807d32d5c15face192617b",
+    "content-hash": "2c88216d3f2960b28e0fe18b7079dede",
     "packages": [
         {
             "name": "api-platform/core",
@@ -12971,46 +12971,44 @@
         },
         {
             "name": "zenstruck/foundry",
-            "version": "v1.38.2",
+            "version": "v2.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/zenstruck/foundry.git",
-                "reference": "841bb70df8e6fa5110b85dec1e851a28b7ac496e"
+                "reference": "0989c5db9aaf7565bd00263c0d8259539c269434"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/zenstruck/foundry/zipball/841bb70df8e6fa5110b85dec1e851a28b7ac496e",
-                "reference": "841bb70df8e6fa5110b85dec1e851a28b7ac496e",
+                "url": "https://api.github.com/repos/zenstruck/foundry/zipball/0989c5db9aaf7565bd00263c0d8259539c269434",
+                "reference": "0989c5db9aaf7565bd00263c0d8259539c269434",
                 "shasum": ""
             },
             "require": {
-                "doctrine/persistence": "^1.3.3|^2.0|^3.0",
-                "fakerphp/faker": "^1.10",
-                "php": ">=8.0",
+                "doctrine/persistence": "^2.0|^3.0",
+                "fakerphp/faker": "^1.23",
+                "php": ">=8.1",
                 "symfony/deprecation-contracts": "^2.2|^3.0",
-                "symfony/property-access": "^5.4|^6.0|^7.0",
-                "symfony/string": "^5.4|^6.0|^7.0",
-                "zenstruck/assert": "^1.0",
-                "zenstruck/callback": "^1.1"
-            },
-            "conflict": {
-                "doctrine/mongodb-odm": "2.5.0"
+                "symfony/framework-bundle": "^6.4|^7.0",
+                "symfony/property-access": "^6.4|^7.0",
+                "zenstruck/assert": "^1.4"
             },
             "require-dev": {
                 "bamarni/composer-bin-plugin": "^1.8",
                 "dama/doctrine-test-bundle": "^7.0|^8.0",
-                "doctrine/doctrine-bundle": "^2.5",
+                "doctrine/collections": "^1.7|^2.0",
+                "doctrine/common": "^3.2",
+                "doctrine/doctrine-bundle": "^2.10",
                 "doctrine/doctrine-migrations-bundle": "^2.2|^3.0",
-                "doctrine/mongodb-odm": "^2.4",
-                "doctrine/mongodb-odm-bundle": "^4.4.0|^5.0",
-                "doctrine/orm": "^2.11|^3.0",
-                "matthiasnoback/symfony-dependency-injection-test": "^4.1|^5.0",
+                "doctrine/mongodb-odm-bundle": "^4.6|^5.0",
+                "doctrine/orm": "^2.16|^3.0",
                 "phpunit/phpunit": "^9.5.0",
-                "symfony/dotenv": "^5.4|^6.0|^7.0",
-                "symfony/framework-bundle": "^5.4|^6.0|^7.0",
-                "symfony/maker-bundle": "^1.49",
-                "symfony/phpunit-bridge": "^5.4|^6.0|^7.0",
-                "symfony/translation-contracts": "^2.5|^3.0"
+                "symfony/console": "^6.4|^7.0",
+                "symfony/dotenv": "^6.4|^7.0",
+                "symfony/maker-bundle": "^1.55",
+                "symfony/phpunit-bridge": "^6.4|^7.0",
+                "symfony/translation-contracts": "^3.4",
+                "symfony/var-dumper": "^6.4|^7.0",
+                "symfony/yaml": "^6.4|^7.0"
             },
             "type": "library",
             "extra": {
@@ -13023,11 +13021,11 @@
             "autoload": {
                 "files": [
                     "src/functions.php",
-                    "src/Persistence/functions.php"
+                    "src/Persistence/functions.php",
+                    "src/phpunit_helper.php"
                 ],
                 "psr-4": {
-                    "Zenstruck\\Foundry\\": "src/",
-                    "Zenstruck\\Foundry\\Utils\\Rector\\": "utils/rector/src/"
+                    "Zenstruck\\Foundry\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -13038,6 +13036,10 @@
                 {
                     "name": "Kevin Bond",
                     "email": "kevinbond@gmail.com"
+                },
+                {
+                    "name": "Nicolas PHILIPPE",
+                    "email": "nikophil@gmail.com"
                 }
             ],
             "description": "A model factory library for creating expressive, auto-completable, on-demand dev/test fixtures with Symfony and Doctrine.",
@@ -13053,7 +13055,7 @@
             ],
             "support": {
                 "issues": "https://github.com/zenstruck/foundry/issues",
-                "source": "https://github.com/zenstruck/foundry/tree/v1.38.2"
+                "source": "https://github.com/zenstruck/foundry/tree/v2.0.4"
             },
             "funding": [
                 {
@@ -13061,7 +13063,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-06-19T12:38:34+00:00"
+            "time": "2024-06-20T16:34:40+00:00"
         },
         {
             "name": "zozlak/rdf-constants",
@@ -13116,7 +13118,7 @@
     },
     "platform-dev": [],
     "platform-overrides": {
-        "php": "8.3.3"
+        "php": "8.3.8"
     },
     "plugin-api-version": "2.6.0"
 }

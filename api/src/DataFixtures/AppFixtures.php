@@ -27,7 +27,6 @@ use Faker\Factory;
 use Faker\Generator;
 use JetBrains\PhpStorm\ExpectedValues;
 use Psr\Log\LoggerInterface;
-use Zenstruck\Foundry\Proxy;
 
 class AppFixtures extends Fixture
 {
@@ -94,7 +93,7 @@ class AppFixtures extends Fixture
         ]);
         $adminFactory->create();
 
-        /** @var array<Proxy<User>> $normalUsers */
+        /** @var User[] $normalUsers */
         $normalUsers = [];
 
         array_push(
@@ -119,12 +118,11 @@ class AppFixtures extends Fixture
         $manager->flush();
     }
 
-    /** @param Proxy<User> $user */
-    private function generateRestaurants(Proxy $user): void
+    private function generateRestaurants(User $user): void
     {
-        RestaurantFactory::faker()->unique(true);
+        RestaurantFactory::getFaker()->unique(true);
         $restaurants = RestaurantFactory::createMany(mt_rand(1, 3), fn() => [
-            "name" => RestaurantFactory::faker()->unique()->company(),
+            "name" => RestaurantFactory::getFaker()->unique()->company(),
             "owner" => $user
         ]);
 
@@ -136,7 +134,7 @@ class AppFixtures extends Fixture
         );
     }
 
-    /** @param array<Proxy<Restaurant>> $restaurants */
+    /** @param Restaurant[] $restaurants */
     private function generateMenusWithStrategy(
         array $restaurants,
         #[ExpectedValues(values: ["distinct", "shared"])] string $strategy
@@ -152,7 +150,7 @@ class AppFixtures extends Fixture
             }
 
             $menuRank = 1;
-            /** @var array<Proxy<Menu>> $menus */
+            /** @var Menu[] $menus */
             foreach($menus as $menu) {
                 RestaurantMenuFactory::createOne([
                     "restaurant" => $restaurant,
@@ -174,10 +172,10 @@ class AppFixtures extends Fixture
         );
     }
 
-    /** @return array<Proxy<Menu>> */
+    /** @return Menu[] */
     private function generateMenus(): array
     {
-        /** @var array<Proxy<Menu>> $menus */
+        /** @var Menu[] $menus */
         $menus = [];
 
         foreach($this->menus as $name => $sectionsInfo) {
@@ -206,7 +204,7 @@ class AppFixtures extends Fixture
         return $menus;
     }
 
-    /** @param array<Proxy<Restaurant>> $restaurants */
+    /** @param Restaurant[] $restaurants */
     private function generateProductsInRestaurantsWithStrategy(
         array $restaurants,
         #[ExpectedValues(values: ["fullySharedMenus", "partiallyShared", "distinct"])] string $strategy
@@ -262,7 +260,7 @@ class AppFixtures extends Fixture
 
     /**
      * @param SectionProductsFixturesData[] $productsFixturesDataArray
-     * @return array<string, array<Proxy<Product>>>
+     * @return array<string, Product[]>
      */
     private function generateProducts(array $productsFixturesDataArray = []): array
     {
@@ -278,11 +276,11 @@ class AppFixtures extends Fixture
             }
         }
 
-        /** @var array<string, array<Proxy<Product>>> $products */
+        /** @var array<string, Product[]> $products */
         $products = [];
 
         foreach($productsFixturesDataArray as $productsFixturesData){
-            ProductFactory::faker()->unique(true);
+            ProductFactory::getFaker()->unique(true);
             $currentProducts = ProductFactory::new()
                 ->as($productsFixturesData->productsType)
                 ->createMany(
@@ -302,8 +300,7 @@ class AppFixtures extends Fixture
         return $products;
     }
 
-    /** @param Proxy<Product> $product */
-    private function addProductAllergens(Proxy $product): void
+    private function addProductAllergens(Product $product): void
     {
         $allergens = $this->faker->randomElements($this->allergens, mt_rand(1, 5));
 
