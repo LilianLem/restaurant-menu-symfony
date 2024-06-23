@@ -116,7 +116,7 @@ class Menu implements RankedEntityInterface, DirectSoftDeleteableEntityInterface
 
     #[ORM\Column(length: 255, nullable: true)]
     #[Assert\Length(max: 255, maxMessage: "Le nom de l'icône ne doit pas dépasser {{ limit }} caractères")]
-    #[Groups(["menu:read", "menu:write", "up:section:read"])]
+    ##[Groups(["menu:read", "menu:write", "up:section:read"])] TODO: handle icons
     #[ApiFilter(ExistsFilter::class)]
     private ?string $icon = null;
 
