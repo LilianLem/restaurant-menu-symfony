@@ -1,6 +1,6 @@
 # Restaurant Menu Symfony
 
-***Disclaimer:** at this time, only API part is developed. Core features are ready to work, but they have not yet been deeply tested.\
+***Disclaimer:** at this time, only API part is developed. Core features are mostly finished, but they have not yet been deeply tested.\
 PWA and Helm in this repository are still API Platform distribution defaults. Frontend app is planned for later.*
 
 The goal of this project is to provide an **easy but complete menu service to restaurant owners**, so they can **create and manage their menus**, and **make them available to everyone** online.<br>

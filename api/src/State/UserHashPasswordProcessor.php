@@ -20,6 +20,10 @@ class UserHashPasswordProcessor implements ProcessorInterface
 
     }
 
+    /**
+     * @template T2
+     * @return T2
+     */
     #[Override] public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = [])
     {
         assert($data instanceof User);

@@ -11,7 +11,7 @@ use App\Entity\Trait\TimestampableEntityTrait;
 use Carbon\Carbon;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Exception;
+use LogicException;
 
 class SoftDeleteableEntityService
 {
@@ -49,7 +49,7 @@ class SoftDeleteableEntityService
         }
 
         if(!$children instanceof Collection) {
-            throw new Exception("An error occurred while processing deletion of an object! This should not happen. Please contact the developer.");
+            throw new LogicException("An error occurred while processing deletion of an object! This should not happen. Please contact the developer.");
         }
 
         /** @var Collection<int, SoftDeleteableEntityInterface> $children */

@@ -5,7 +5,7 @@ namespace App\Entity\Trait;
 use App\Entity\Interface\OwnedEntityInterface;
 use App\Entity\User;
 use Doctrine\Common\Collections\Collection;
-use Exception;
+use LogicException;
 
 trait OwnedEntityTrait
 {
@@ -35,6 +35,6 @@ trait OwnedEntityTrait
             }
         }
 
-        throw new Exception("Entity owner not found! This should not happen. Please contact the developer.");
+        throw new LogicException("Entity owner not found! This should not happen. Please contact the developer.");
     }
 }

@@ -8,7 +8,6 @@ use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\BrowserKit\CookieJar;
 use Zenstruck\Browser\HttpOptions;
 use Zenstruck\Browser\Test\HasBrowser;
-use Zenstruck\Foundry\Persistence\Proxy;
 
 // TODO: improve test performance with https://github.com/dmaicher/doctrine-test-bundle (bundle recommended in zenstruck/foundry docs)
 abstract class ApiTestCase extends KernelTestCase
@@ -17,8 +16,8 @@ abstract class ApiTestCase extends KernelTestCase
         browser as appBrowser;
     }
 
-    /** @param User|Proxy<User> $actingAs */
-    protected function browser(array $options = [], array $server = [], User|Proxy|null $actingAs = null): AppBrowser
+    /** @param User $actingAs */
+    protected function browser(array $options = [], array $server = [], ?User $actingAs = null): AppBrowser
     {
         /** @var AppBrowser $browser */
         $browser = $this->appBrowser($options, $server)
@@ -34,11 +33,9 @@ abstract class ApiTestCase extends KernelTestCase
             return $browser;
         }
 
-        $userEmail = $actingAs instanceof Proxy ? $actingAs->_real()->getEmail() : $actingAs->getEmail();
-
         $authResponse = $browser->post("/token", [
             "json" => [
-                "email" => $userEmail,
+                "email" => $actingAs->getEmail(),
                 "password" => UserFactory::DEFAULT_PASSWORD
             ]
         ])->client()->getInternalResponse();

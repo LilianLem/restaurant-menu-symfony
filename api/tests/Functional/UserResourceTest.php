@@ -161,7 +161,7 @@ class UserResourceTest extends ApiTestCase
         ;
 
         $email = UserFactory::generateEmail();
-        $password = UserFactory::faker()->password(12, 128);
+        $password = UserFactory::getFaker()->password(12, 128);
 
         $browser->post("/users", [
                 "json" => [
@@ -283,7 +283,7 @@ class UserResourceTest extends ApiTestCase
         // As admin, on behalf of a new user
 
         $email = UserFactory::generateEmail();
-        $password = UserFactory::faker()->password(12, 128);
+        $password = UserFactory::getFaker()->password(12, 128);
 
         $browser = $this->browser(actingAs: $admin);
 
@@ -350,7 +350,7 @@ class UserResourceTest extends ApiTestCase
 
         $superAdmin = UserFactory::new()->asSuperAdmin()->create();
         $email = UserFactory::generateEmail();
-        $password = UserFactory::faker()->password(12, 128);
+        $password = UserFactory::getFaker()->password(12, 128);
 
         $this->browser(actingAs: $superAdmin)
             ->post("/users", [

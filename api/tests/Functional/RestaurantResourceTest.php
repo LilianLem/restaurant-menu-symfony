@@ -6,7 +6,6 @@ use App\Entity\Restaurant;
 use App\Factory\RestaurantFactory;
 use App\Factory\UserFactory;
 use Symfony\Component\HttpFoundation\Response;
-use Zenstruck\Foundry\Persistence\Proxy;
 use Zenstruck\Foundry\Test\ResetDatabase;
 
 class RestaurantResourceTest extends ApiTestCase
@@ -19,8 +18,8 @@ class RestaurantResourceTest extends ApiTestCase
         $user = UserFactory::createOne();
         $ownedRestaurants = RestaurantFactory::createMany(2, ["owner" => $user]);
 
-        /** @var Restaurant|Proxy<Restaurant> $restaurant */
-        $ownedRestaurantIds = array_map(fn(Restaurant|Proxy $restaurant) => $restaurant->getId()->jsonSerialize(), $ownedRestaurants);
+        /** @var Restaurant $restaurant */
+        $ownedRestaurantIds = array_map(fn(Restaurant $restaurant) => $restaurant->getId()->jsonSerialize(), $ownedRestaurants);
 
         $admin = UserFactory::new()->asAdmin()->create();
 

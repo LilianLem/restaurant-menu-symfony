@@ -10,7 +10,7 @@ use App\Entity\Product;
 use App\Entity\Restaurant;
 use App\Entity\Section;
 use Doctrine\ORM\QueryBuilder;
-use Exception;
+use LogicException;
 use Override;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -74,7 +74,7 @@ class AccessFilterExtension implements QueryCollectionExtensionInterface
         } elseif($resourceClass === Restaurant::class) {
             $queryBuilder->andWhere(sprintf("%s.owner = :owner", $rootAlias));
         } else {
-            throw new Exception("Collection access filtering failed! This should never happen, please contact the developer.");
+            throw new LogicException("Collection access filtering failed! This should never happen, please contact the developer.");
         }
 
         $queryBuilder->setParameter("owner", $this->security->getUser()->getId(), UlidType::NAME);

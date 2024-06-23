@@ -11,7 +11,7 @@ use App\Entity\Interface\RankedEntityInterface;
 use App\Entity\Interface\RankingEntityInterface;
 use App\Service\SoftDeleteableEntityService;
 use Doctrine\ORM\EntityManagerInterface;
-use Exception;
+use LogicException;
 use Override;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -28,12 +28,16 @@ class DirectSoftDeleteableEntityStateProcessor implements ProcessorInterface
 
     }
 
+    /**
+     * @template T2
+     * @return T2
+     */
     #[Override] public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = [])
     {
         assert($data instanceof DirectSoftDeleteableEntityInterface);
 
         if(!$operation instanceof DeleteOperationInterface) {
-            throw new Exception("This state processor should not be called in this situation! Please contact the developer.");
+            throw new LogicException("This state processor should not be called in this situation! Please contact the developer.");
         }
 
         if(!$data->isDeleted()) {
