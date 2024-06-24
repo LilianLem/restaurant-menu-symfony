@@ -285,7 +285,7 @@ class MenuResourceTest extends ApiTestCase
         $browser = $this->browser();
 
         $menu = null;
-        /** @var array{0: Menu, 1: string} $data */
+        /** @var array{0: Menu, 1: int} $data */
         foreach($expectedResultsData as $data) {
             $browser->get("/menus/".$data[0]->getId())
                 ->assertJson()
@@ -330,7 +330,7 @@ class MenuResourceTest extends ApiTestCase
         $browser = $this->browser(actingAs: $this->userA);
 
         $menu = null;
-        /** @var array{0: Menu, 1: string} $data */
+        /** @var array{0: Menu, 1: int} $data */
         foreach($expectedResultsData as $data) {
             $browser->get("/menus/".$data[0]->getId())
                 ->assertJson()
@@ -379,7 +379,7 @@ class MenuResourceTest extends ApiTestCase
 
         $menuB = null;
         $menuA = null;
-        /** @var array{0: Menu, 1: string} $data */
+        /** @var array{0: Menu, 1: int} $data */
         foreach($expectedResultsData as $data) {
             $browser->get("/menus/".$data[0]->getId())
                 ->assertJson()
@@ -450,7 +450,7 @@ class MenuResourceTest extends ApiTestCase
         $browser = $this->browser(actingAs: $this->admin);
 
         $menu = null;
-        /** @var array{0: Menu, 1: string} $data */
+        /** @var array{0: Menu, 1: int} $data */
         foreach($expectedResultsData as $data) {
             $browser->get("/menus/".$data[0]->getId())
                 ->assertJson()

@@ -63,10 +63,10 @@ use Symfony\Component\Validator\Constraints as Assert;
     denormalizationContext: ["groups" => ["product:write"]]
 )]
 #[ApiFilter(SearchFilter::class, properties: [
-    "sectionProducts.section" => SearchFilter::STRATEGY_EXACT,
-    "sectionProducts.section.sectionMenu.menu" => SearchFilter::STRATEGY_EXACT,
-    "sectionProducts.section.sectionMenu.menu.menuRestaurants.restaurant" => SearchFilter::STRATEGY_EXACT,
-    "sectionProducts.section.sectionMenu.menu.menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
+    "productSections.section" => SearchFilter::STRATEGY_EXACT,
+    "productSections.section.sectionMenu.menu" => SearchFilter::STRATEGY_EXACT,
+    "productSections.section.sectionMenu.menu.menuRestaurants.restaurant" => SearchFilter::STRATEGY_EXACT,
+    "productSections.section.sectionMenu.menu.menuRestaurants.restaurant.owner" => SearchFilter::STRATEGY_EXACT
 ])]
 #[ApiFilter(BooleanFilter::class, properties: ["sectionProducts.visible"])]
 class Product implements RankedEntityInterface, IndirectSoftDeleteableEntityInterface
@@ -272,6 +272,7 @@ class Product implements RankedEntityInterface, IndirectSoftDeleteableEntityInte
      */
     #[Groups(["product:read:self", "up:product:read"])]
     #[ApiProperty(security: ApiSecurityExpressionDirectory::NOT_ADMIN_NOR_OWNER_AND_NOT_NULL_OBJECT)]
+    #[SerializedName("productSections")]
     public function getPublicProductSections(): Collection
     {
         return new ArrayCollection(
