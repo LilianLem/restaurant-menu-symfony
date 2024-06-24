@@ -149,8 +149,6 @@ class MenuResourceTest extends ApiTestCase
 
     public function testGetCollectionOfMenus(): void
     {
-        // ------ //
-
         // As guest
 
         $this->browser()

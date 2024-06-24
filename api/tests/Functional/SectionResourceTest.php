@@ -18,8 +18,6 @@ class SectionResourceTest extends ApiTestCase
 
     public function testGetCollectionOfSections(): void
     {
-        // ------ //
-
         // As guest
 
         $this->browser()
