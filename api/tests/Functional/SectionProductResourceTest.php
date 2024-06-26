@@ -112,7 +112,7 @@ class SectionProductResourceTest extends ApiTestCase
             ->assertJsonMatches('productSections[0].section."@id"', "/sections/".$this->sectionA1->getId())
         ;
 
-        // Checking if normal user B can link an owned product to a section owned by user A, and if user B can link an owned section to a product owned by user B
+        // Checking if normal user B can link an owned product to a section owned by user A, and if user B can link an owned section to a product owned by user A
         $browser->post("/section_products", [
                 "json" => [
                     "section" => "/sections/".$this->sectionA1->getId(),

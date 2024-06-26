@@ -12,7 +12,7 @@ use Carbon\Carbon;
 trait UserToProductPopulateTrait
 {
     use UserToSectionPopulateTrait {
-        populate as parentPopulate;
+        populate as userToSectionPopulate;
     }
 
     /** @var array<string, int> */
@@ -40,7 +40,7 @@ trait UserToProductPopulateTrait
 
     private function populate(): void
     {
-        $this->parentPopulate();
+        $this->userToSectionPopulate();
 
         // --- Product ---
 
