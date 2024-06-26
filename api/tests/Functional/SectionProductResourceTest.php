@@ -2,8 +2,6 @@
 
 namespace App\Tests\Functional;
 
-use App\Entity\SectionProduct;
-use App\Factory\SectionProductFactory;
 use Override;
 use Symfony\Component\HttpFoundation\Response;
 use Zenstruck\Foundry\Test\ResetDatabase;
@@ -13,22 +11,9 @@ class SectionProductResourceTest extends ApiTestCase
     use ResetDatabase;
     use UserToProductPopulateTrait;
 
-    /** @var SectionProduct[] $userASectionProducts */
-    private array $userASectionProducts;
-
-    /** @var SectionProduct[] $userBSectionProducts */
-    private array $userBSectionProducts;
-
-    /** @var SectionProduct[] $userCSectionProducts */
-    private array $userCSectionProducts;
-
     #[Override] protected function setUp(): void
     {
         $this->populate();
-
-        $this->userASectionProducts = SectionProductFactory::findBy(["section" => [$this->sectionA1, $this->sectionA2, $this->sectionA3, $this->sectionA4]]);
-        $this->userBSectionProducts = SectionProductFactory::findBy(["section" => [$this->sectionB1, $this->sectionB2, $this->sectionB3, $this->sectionB4]]);
-        $this->userCSectionProducts = SectionProductFactory::findBy(["section" => [$this->sectionC1]]);
     }
 
     public function testPostSectionProduct(): void
@@ -200,7 +185,7 @@ class SectionProductResourceTest extends ApiTestCase
         // As guest
 
         $this->browser()
-            ->delete("/section_products/".$this->userASectionProducts[0]->getId())
+            ->delete("/section_products/".$this->sectionProducts["A"][0]->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_UNAUTHORIZED)
         ;
@@ -208,14 +193,14 @@ class SectionProductResourceTest extends ApiTestCase
         // As normal user A
 
         $this->browser(actingAs: $this->userA)
-            ->delete("/section_products/".$this->userBSectionProducts[0]->getId())
+            ->delete("/section_products/".$this->sectionProducts["B"][0]->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_FORBIDDEN)
 
-            ->delete("/section_products/".$this->userASectionProducts[0]->getId())
+            ->delete("/section_products/".$this->sectionProducts["A"][1]->getId())
             ->assertStatus(Response::HTTP_NO_CONTENT)
 
-            ->delete("/section_products/".$this->userASectionProducts[0]->getId())
+            ->delete("/section_products/".$this->sectionProducts["A"][1]->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_NOT_FOUND)
         ;
@@ -223,18 +208,23 @@ class SectionProductResourceTest extends ApiTestCase
         // As normal user B
 
         $this->browser(actingAs: $this->userB)
-            ->delete("/products/".$this->userASectionProducts[1]->getId())
+            ->delete("/section_products/".$this->sectionProducts["A"][0]->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_FORBIDDEN)
 
-            ->delete("/products/".$this->userBSectionProducts[0]->getId())
+            ->delete("/section_products/".$this->sectionProducts["B"][0]->getId())
+            ->assertJson()
+            ->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)
+            ->assertJsonMatches('detail', "id: Ce produit n'est relié qu'à une seule section. Veuillez supprimer le produit directement.")
+
+            ->delete("/products/".$this->sectionProducts["B"][0]->getProduct()->getId())
             ->assertStatus(Response::HTTP_NO_CONTENT)
 
-            ->delete("/products/".$this->userBSectionProducts[0]->getId())
+            ->delete("/section_products/".$this->sectionProducts["B"][0]->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_NOT_FOUND)
 
-            ->delete("/products/".$this->userBSectionProducts[3]->getId())
+            ->delete("/section_products/".$this->sectionProducts["B"][4]->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_NOT_FOUND)
         ;
@@ -242,10 +232,10 @@ class SectionProductResourceTest extends ApiTestCase
         // As admin
 
         $this->browser(actingAs: $this->admin)
-            ->delete("/products/".$this->userASectionProducts[2]->getId())
+            ->delete("/section_products/".$this->sectionProducts["A"][2]->getId())
             ->assertStatus(Response::HTTP_NO_CONTENT)
 
-            ->delete("/products/".$this->userASectionProducts[2]->getId())
+            ->delete("/section_products/".$this->sectionProducts["A"][2]->getId())
             ->assertJson()
             ->assertStatus(Response::HTTP_NOT_FOUND)
         ;

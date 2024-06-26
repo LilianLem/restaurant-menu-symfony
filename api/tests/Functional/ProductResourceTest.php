@@ -450,8 +450,7 @@ class ProductResourceTest extends ApiTestCase
             "Product keys are not matching when posting as normal user A"
         );
 
-        $this->browser(actingAs: $this->admin)
-            ->get($product["@id"])
+        $browser->get($product["@id"])
             ->assertJson()
             ->assertStatus(Response::HTTP_OK)
             ->assertJsonMatches('productSections[0].section."@id"', "/sections/".$this->sectionA1->getId())

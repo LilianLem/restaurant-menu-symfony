@@ -100,10 +100,9 @@ class ProductVersion implements RankingEntityInterface, RankedEntityInterface, I
     #[Groups(["productVersion:read", "productVersion:write", "product:read"])]
     private ?int $rank = null;
 
-    public function __construct(Product $product)
+    public function __construct()
     {
         $this->visible = true;
-        $this->product = $product;
     }
 
     public function getId(): ?Ulid

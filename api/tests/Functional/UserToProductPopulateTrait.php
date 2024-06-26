@@ -4,6 +4,7 @@ namespace App\Tests\Functional;
 
 use App\Entity\Product;
 use App\Entity\Section;
+use App\Entity\SectionProduct;
 use App\Factory\ProductFactory;
 use App\Factory\SectionProductFactory;
 use Carbon\Carbon;
@@ -13,6 +14,9 @@ trait UserToProductPopulateTrait
     use UserToSectionPopulateTrait {
         populate as parentPopulate;
     }
+
+    /** @var array<string, int> */
+    private const array PRODUCTS_DATA = ["A" => 7, "B" => 7, "C" => 2];
 
     private Product $productA1;
     private Product $productA2;
@@ -31,15 +35,16 @@ trait UserToProductPopulateTrait
     private Product $productC1;
     private Product $productC2;
 
+    /** @var array{string, SectionProduct[]} $sectionProducts */
+    private array $sectionProducts;
+
     private function populate(): void
     {
         $this->parentPopulate();
 
         // --- Product ---
 
-        /** @var array<string, int> $productsData */
-        $productsData = ["A" => 7, "B" => 7, "C" => 2];
-        foreach($productsData as $letter => $count) {
+        foreach(self::PRODUCTS_DATA as $letter => $count) {
             $i = 1;
             while($i <= $count) {
                 $this->{"product".$letter.$i} = ProductFactory::createOne([
@@ -80,7 +85,7 @@ trait UserToProductPopulateTrait
 
         /** @var array{0: Section, 1: Product, 2: bool, 3: int, 4?: true} $data */
         foreach($sectionProductData as $data) {
-            SectionProductFactory::createOne([
+            $this->sectionProducts[substr($data[0]->getName(), -2, 1)][] = SectionProductFactory::createOne([
                 "section" => $data[0],
                 "product" => $data[1],
                 "visible" => $data[2],
