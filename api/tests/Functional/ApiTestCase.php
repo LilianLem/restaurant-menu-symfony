@@ -9,7 +9,6 @@ use Symfony\Component\BrowserKit\CookieJar;
 use Zenstruck\Browser\HttpOptions;
 use Zenstruck\Browser\Test\HasBrowser;
 
-// TODO: improve test performance with https://github.com/dmaicher/doctrine-test-bundle (bundle recommended in zenstruck/foundry docs)
 abstract class ApiTestCase extends KernelTestCase
 {
     use HasBrowser {
