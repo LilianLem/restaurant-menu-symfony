@@ -10,7 +10,9 @@ The goal of this project is to provide an **easy but complete menu service to re
 
 - Clone the repository
 - **If you want working emails** (for account verifying and password reset), create **.env.local in /api** directory, and set **MAILER_DSN** environment variable.
-- Run ```docker compose build --no-cache``` and ```docker-compose up -d --wait``` in root directory to setup containers
+- Run ```docker compose build --no-cache``` and ```docker-compose up -d --wait``` in root directory to **setup containers**
+- Run ```docker compose exec php composer prl && docker compose exec php composer prp``` to **apply a custom patch** to api-platform/core related to ULID handling 
+- Run ```docker compose exec php php bin/console lexik:jwt:generate-keypair && docker compose exec php php bin/console lexik:jwt:generate-keypair --env test``` to **generate auth certificates**
 - Run ```docker compose exec php php bin/console d:f:l --purge-exclusions=allergen -v``` to **generate data fixtures**
 
 ## Using the API
@@ -74,3 +76,7 @@ They are, respectively: RestaurantMenu, MenuSection, SectionProduct and ProductV
 Other DELETE requests (RestaurantMenu, MenuSection, Section, SectionProduct, Product and ProductVersion) are hard deleting entities with **orphan cascade deletion**.
 
 **Soft deletion also occurs on linked elements**: for example, deleting a Menu will soft delete it, as well as RestaurantMenu, MenuSection, Section and SectionProduct entities referencing it directly or indirectly, and also Product entities if they now only have soft deleted parents.
+
+## Testing
+
+Run ```docker compose exec php php bin/phpunit``` to **execute all available tests** at once.
