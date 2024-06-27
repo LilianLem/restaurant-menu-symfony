@@ -3,8 +3,8 @@
 # Adapted from https://github.com/dunglas/symfony-docker
 
 
-# Versions
-FROM dunglas/frankenphp:1-php8.3 AS frankenphp_upstream
+# Versions: locked at 8.3.7 because a bug was introduced in PHP 8.3.8 (fix coming in 8.3.9): https://github.com/api-platform/core/issues/6416
+FROM dunglas/frankenphp:1-php8.3.7 AS frankenphp_upstream
 
 
 # The different stages of this Dockerfile are meant to be built into separate images

@@ -13118,7 +13118,7 @@
     },
     "platform-dev": [],
     "platform-overrides": {
-        "php": "8.3.8"
+        "php": "8.3.7"
     },
     "plugin-api-version": "2.6.0"
 }
