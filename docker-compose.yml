@@ -41,8 +41,6 @@ services:
   ###> doctrine/doctrine-bundle ###
   database:
     image: mariadb:10.11.8
-    healthcheck:
-      test: "exit 0"
     restart: always
     environment:
       # You should definitely change the password in production
