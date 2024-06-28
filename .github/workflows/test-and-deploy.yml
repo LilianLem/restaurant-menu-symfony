@@ -97,5 +97,3 @@ jobs:
             docker-compose up -f docker-compose.yml -f docker-compose.prod.yaml -d --build --wait
             docker compose exec php composer prl && docker compose exec php composer prp
             docker compose exec php php bin/console lexik:jwt:generate-keypair --skip-if-exists && docker compose exec php php bin/console lexik:jwt:generate-keypair --env test --skip-if-exists
-            docker compose exec php php bin/console d:f:l --purge-exclusions=allergen -nv
-            
