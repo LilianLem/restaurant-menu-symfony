@@ -36,9 +36,7 @@ jobs:
         shell: bash
       -
         name: Start services
-        run: docker compose up --no-build # --wait
-        with:
-          context: ./api
+        run: docker compose up -f docker-compose.yml -f docker-compose.dev.yaml --no-build # --wait
       -
         name: Display Docker events
         run: cat docker_events.log
