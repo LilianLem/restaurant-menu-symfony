@@ -36,21 +36,7 @@ jobs:
         shell: bash
       -
         name: Start services
-        run: docker compose up -d --no-build # --wait
-      -
-        name: Wait for container to become unhealthy
-        run: |
-          while true; do
-            HEALTH_STATUS=$(docker inspect --format='{{json .State.Health.Status}}' app-php)
-            if [ "$HEALTH_STATUS" != "\"healthy\"" ]; then
-              echo "Container is not healthy, fetching logs..."
-              docker compose exec -T php composer ls /app
-              docker logs my-container
-              break
-            fi
-            sleep 5
-          done
-        shell: bash
+        run: docker compose up --no-build # --wait
       -
         name: Display Docker events
         run: cat docker_events.log
