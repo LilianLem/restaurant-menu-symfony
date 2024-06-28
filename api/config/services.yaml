@@ -37,16 +37,20 @@ services:
 
     Symfony\Component\Security\Http\Authentication\AuthenticationSuccessHandlerInterface $gesdinetAuthenticationSuccessHandler: '@Gesdinet\JWTRefreshTokenBundle\Security\Http\Authentication\AuthenticationSuccessHandler'
 
-    Faker\:
-        resource: '../vendor/fakerphp/faker/src/Faker/'
-        exclude:
-            - '../vendor/fakerphp/faker/src/Faker/*/'
+when@dev: &services_dev
+    services:
+        Faker\:
+            resource: '../vendor/fakerphp/faker/src/Faker/'
+            exclude:
+                - '../vendor/fakerphp/faker/src/Faker/*/'
 
-    Bezhanov\Faker\Provider\Commerce:
-        tags: ['foundry.faker_provider']
+        Bezhanov\Faker\Provider\Commerce:
+            tags: ['foundry.faker_provider']
 
-    Bluemmb\Faker\PicsumPhotosProvider:
-        tags: ['foundry.faker_provider']
+        Bluemmb\Faker\PicsumPhotosProvider:
+            tags: ['foundry.faker_provider']
 
-    App\DataFixtures\ProductProvider:
-        tags: ['foundry.faker_provider']
+        App\DataFixtures\ProductProvider:
+            tags: ['foundry.faker_provider']
+
+when@test: *services_dev
