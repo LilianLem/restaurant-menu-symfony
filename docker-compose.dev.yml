@@ -1,7 +1,7 @@
 # Development environment override
 services:
   php:
-    working_dir: ./api
+    #working_dir: ./api
     build:
       context: ./api
       target: frankenphp_dev
