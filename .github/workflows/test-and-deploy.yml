@@ -9,7 +9,7 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    environment: dev
+    #environment: dev
     steps:
       -
         name: Checkout
@@ -44,6 +44,7 @@ jobs:
             HEALTH_STATUS=$(docker inspect --format='{{json .State.Health.Status}}' my-container)
             if [ "$HEALTH_STATUS" != "\"healthy\"" ]; then
               echo "Container is not healthy, fetching logs..."
+              docker compose exec -T php composer ls /app
               docker logs my-container
               break
             fi
