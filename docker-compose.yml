@@ -2,8 +2,7 @@ services:
   php:
     image: ${IMAGES_PREFIX:-}app-php
     depends_on:
-      database:
-        condition: service_healthy
+      - database
     restart: unless-stopped
     environment:
       PWA_UPSTREAM: pwa:3000
@@ -41,19 +40,13 @@ services:
   ###> doctrine/doctrine-bundle ###
   database:
     image: mariadb:10.11.8
-    healthcheck:
-      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
-      start_period: 10s
-      interval: 10s
-      timeout: 5s
-      retries: 3
     restart: always
     environment:
       # You should definitely change the password in production
       MARIADB_DATABASE: restaurant-menu-symfony
-      MARIADB_ROOT_PASSWORD: password
-      MARIADB_USER: root
-      MARIADB_PASSWORD: password
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-password}
+      MARIADB_USER: ${MARIADB_USER:-root}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-password}
     volumes:
       - db_data:/var/lib/mysql/data
     ports:
