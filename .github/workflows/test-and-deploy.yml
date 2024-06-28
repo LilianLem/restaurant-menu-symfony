@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Tests and deployment to VPS
 
 on:
   push:
@@ -23,8 +23,8 @@ jobs:
           pull: true
           load: true
           files: |
-            compose.yaml
-            compose.override.yaml
+            docker-compose.yaml
+            docker-compose.dev.yml
           set: |
             *.cache-from=type=gha,scope=${{github.ref}}
             *.cache-from=type=gha,scope=refs/heads/main
