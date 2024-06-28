@@ -37,6 +37,8 @@ jobs:
       -
         name: Start services
         run: docker compose up --no-build # --wait
+        with:
+          context: ./api
       -
         name: Display Docker events
         run: cat docker_events.log
