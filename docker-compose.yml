@@ -2,7 +2,8 @@ services:
   php:
     image: ${IMAGES_PREFIX:-}app-php
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     restart: unless-stopped
     environment:
       PWA_UPSTREAM: pwa:3000
@@ -40,6 +41,8 @@ services:
   ###> doctrine/doctrine-bundle ###
   database:
     image: mariadb:10.11.8
+    healthcheck:
+      test: "exit 0"
     restart: always
     environment:
       # You should definitely change the password in production
