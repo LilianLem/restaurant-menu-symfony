@@ -41,7 +41,7 @@ jobs:
         name: Wait for container to become unhealthy
         run: |
           while true; do
-            HEALTH_STATUS=$(docker inspect --format='{{json .State.Health.Status}}' my-container)
+            HEALTH_STATUS=$(docker inspect --format='{{json .State.Health.Status}}' php)
             if [ "$HEALTH_STATUS" != "\"healthy\"" ]; then
               echo "Container is not healthy, fetching logs..."
               docker compose exec -T php composer ls /app
