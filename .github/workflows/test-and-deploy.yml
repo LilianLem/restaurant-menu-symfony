@@ -36,7 +36,7 @@ jobs:
         shell: bash
       -
         name: Start services
-        run: docker compose up --wait --no-build
+        run: docker compose up --no-build # --wait
       -
         name: Wait for container to become unhealthy
         run: |
