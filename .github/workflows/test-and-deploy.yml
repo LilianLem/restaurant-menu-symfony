@@ -23,7 +23,7 @@ jobs:
           pull: true
           load: true
           files: |
-            docker-compose.yaml
+            docker-compose.yml
             docker-compose.dev.yml
           set: |
             *.cache-from=type=gha,scope=${{github.ref}}
