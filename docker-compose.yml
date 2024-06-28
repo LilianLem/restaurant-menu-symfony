@@ -31,6 +31,7 @@ services:
       - target: 443
         published: ${HTTP3_PORT:-443}
         protocol: udp
+    working_dir: /app
 
 #  pwa:
 #    image: ${IMAGES_PREFIX:-}app-pwa
