@@ -9,7 +9,7 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    environment: prod
+    #environment: dev
     steps:
       -
         name: Checkout
@@ -78,9 +78,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
       - name: Build and push Docker image
-        run: |
-          docker build -t lilianlem/rms-php:latest .
-          docker push lilianlem/rms-php:latest
+        uses: docker/build-push-action@v6
+        with:
+          push: true
+          tags: lilianlem/rms-php:latest
       
       - name: Deploy to VPS
         uses: appleboy/ssh-action@master
