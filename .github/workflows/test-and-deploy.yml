@@ -31,8 +31,28 @@ jobs:
             *.cache-from=type=gha,scope=refs/heads/main
             *.cache-to=type=gha,scope=${{github.ref}},mode=max
       -
+        name: Start Docker event logging
+        run: docker events --filter 'event=health_status' --filter 'container=php' > docker_events.log &
+        shell: bash
+      -
         name: Start services
         run: docker compose up --wait --no-build
+      -
+        name: Wait for container to become unhealthy
+        run: |
+          while true; do
+            HEALTH_STATUS=$(docker inspect --format='{{json .State.Health.Status}}' my-container)
+            if [ "$HEALTH_STATUS" != "\"healthy\"" ]; then
+              echo "Container is not healthy, fetching logs..."
+              docker logs my-container
+              break
+            fi
+            sleep 5
+          done
+        shell: bash
+      -
+        name: Display Docker events
+        run: cat docker_events.log
       -
         name: Apply a patch to API Platform (ULID handling)
         run: docker compose exec -T php composer prl && docker compose exec -T php composer prp
