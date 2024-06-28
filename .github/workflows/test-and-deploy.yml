@@ -36,7 +36,7 @@ jobs:
         shell: bash
       -
         name: Start services
-        run: docker compose up -f docker-compose.yml -f docker-compose.dev.yaml --no-build # --wait
+        run: docker compose -f docker-compose.yml -f docker-compose.dev.yml up --no-build # --wait
       -
         name: Display Docker events
         run: cat docker_events.log
@@ -107,6 +107,6 @@ jobs:
           script: |
             docker pull lilianlem/rms-php:latest
             cd rms
-            docker-compose up -f docker-compose.yml -f docker-compose.prod.yaml -d --build --wait
+            docker compose -f docker-compose.yml -f docker-compose.prod.yaml up -d --build --wait
             docker compose exec php composer prl && docker compose exec php composer prp
             docker compose exec php php bin/console lexik:jwt:generate-keypair --skip-if-exists && docker compose exec php php bin/console lexik:jwt:generate-keypair --env test --skip-if-exists
